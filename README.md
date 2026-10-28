@@ -28,3 +28,9 @@ Until `sheetUrl` is set, the page runs as a preview: recipes a visitor adds stay
 Each upload (photo, screenshot, PDF or text file) is saved to the Drive folder and logged on the **Recipes** tab with Status **New**. Every 5 minutes the helper sends new uploads to Gemini, which reads the recipe and fills in whose recipe it is, servings, ingredients, steps and the story. It sets Status to **Organized** and emails Kristine a clean copy. Anything it can't read is marked **Needs a look**, with a note saying why. The **PJ Party > Organize new recipes now** menu in the Sheet runs it right away.
 
 Organized recipes show up on the site under "Read the recipe". To fix or remove an entry, edit its row in the Sheet.
+
+## The pajama helper
+
+The form asks each guest whether they've bought their Tree Stripes pajamas. Guests who are still looking list who needs pajamas and in what sizes, plus their email. Those rows get **Pajama help: Searching** on the Recipes tab. On the same 5-minute run, Gemini searches the web (Google Search grounding) for those sizes, starting with Old Navy. The guest then gets an email with what's in stock and the links, and Kristine gets a blind copy. Replies go to Kristine. The row then reads **Emailed** with the date, or **Needs a look** with the reason. The **PJ Party > Find pajamas for guests now** menu runs it right away.
+
+After pasting a new version of `Code.gs`, open **Deploy > Manage deployments**, edit the web app, set **Version: New version** and click **Deploy**. The URL stays the same.
