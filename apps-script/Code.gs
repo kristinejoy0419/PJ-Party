@@ -15,6 +15,10 @@
  *  - The recipe helper (organizeRecipes, every 5 minutes) sends each new upload
  *    to Gemini, which reads the photo or PDF and fills in whose recipe it is,
  *    servings, ingredients, steps and the story, then emails Kristine a tidy copy.
+ *  - The pajama helper (findPajamas, on the same 5-minute run) takes each guest
+ *    who is still looking for a size, has Gemini search Old Navy for the Tree
+ *    Stripes pajamas in those sizes, and emails the guest what it found
+ *    (Kristine gets a blind copy).
  */
 const COLLECTOR_EMAIL = "kristinejoy@gmail.com";
 const DEFAULT_MODEL = "gemini-2.5-flash";
@@ -23,7 +27,8 @@ const COURSES = ["Bites", "Mains", "Sides", "Sweets", "Sips"];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 const COLS = ["Timestamp", "Name", "Party", "Dish", "Course", "Note", "File", "Status",
-  "Whose recipe", "Serves", "Ingredients", "How to make it", "Story", "Helper notes"];
+  "Whose recipe", "Serves", "Ingredients", "How to make it", "Story", "Helper notes",
+  "Email", "Pajamas", "Sizes needed", "Pajama help"];
 const C = Object.fromEntries(COLS.map((h, i) => [h, i + 1])); // header -> 1-based column
 
 function recipesSheet_() {
@@ -34,6 +39,9 @@ function recipesSheet_() {
     sheet.appendRow(COLS);
     sheet.setFrozenRows(1);
     sheet.getRange(1, 1, 1, COLS.length).setFontWeight("bold");
+  } else if (sheet.getLastColumn() < COLS.length) {
+    // An older copy of the tab: add the newer columns on the right.
+    sheet.getRange(1, 1, 1, COLS.length).setValues([COLS]).setFontWeight("bold");
   }
   return sheet;
 }
@@ -56,6 +64,7 @@ function setup() {
 function onOpen() {
   SpreadsheetApp.getUi().createMenu("PJ Party")
     .addItem("Organize new recipes now", "organizeRecipes")
+    .addItem("Find pajamas for guests now", "findPajamasNow")
     .addToUi();
 }
 
@@ -87,7 +96,10 @@ function doPost(e) {
     name: clip_(body.name, 60), party: Math.min(12, Math.max(1, Number(body.party) || 1)),
     dish: clip_(body.dish, 80), note: clip_(body.note, 300),
     course: COURSES.indexOf(body.course) >= 0 ? body.course : "Mains",
+    pajamas: body.pajamas === "Still looking" ? "Still looking" : body.pajamas === "Got them" ? "Got them" : "",
+    email: clip_(body.email, 120), sizes: clip_(body.sizes, 300),
   };
+  if (entry.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(entry.email)) entry.email = "";
   if (!entry.name || !entry.dish) return json_({ ok: false, error: "Name and dish are required" });
 
   let fileUrl = "";
@@ -111,6 +123,11 @@ function doPost(e) {
     row[C.Note - 1] = entry.note;
     row[C.File - 1] = fileUrl;
     row[C.Status - 1] = fileUrl ? "New" : "No recipe yet";
+    row[C.Email - 1] = entry.email;
+    row[C.Pajamas - 1] = entry.pajamas;
+    row[C["Sizes needed"] - 1] = entry.pajamas === "Still looking" ? entry.sizes : "";
+    row[C["Pajama help"] - 1] = entry.pajamas !== "Still looking" ? ""
+      : entry.email && entry.sizes ? "Searching" : "No email, ask Kristine";
     recipesSheet_().appendRow(row);
   } finally {
     lock.releaseLock();
@@ -158,6 +175,7 @@ function organizeRecipes() {
         sheet.getRange(rowNum, C["Helper notes"]).setValue(String(err.message || err).slice(0, 500));
       }
     }
+    findPajamas_(sheet, key, model);
   } finally {
     lock.releaseLock();
   }
@@ -251,4 +269,97 @@ function emailKristine_(r, x) {
   } catch (err) {
     // The row is organized even if the daily email quota is used up.
   }
+}
+
+// ---------- Pajama helper ----------
+
+const PAJAMA_LOOKS = [
+  "Kids: Tree Stripes flannel pajama set (the original, mostly sold out) https://oldnavy.gap.com/browse/product.do?pid=904628002",
+  "Kids: Always Believin' snug-fit set, Santa top with tree-stripe pants https://oldnavy.gap.com/browse/product.do?pid=904646042",
+  "Women's: Always Believin' tee https://oldnavy.gap.com/browse/product.do?pid=910769032",
+  "Women's: Tree Stripes flannel pajama pants https://oldnavy.gap.com/browse/product.do?pid=908779022",
+  "Women's: Tree Stripes boxer shorts https://oldnavy.gap.com/browse/product.do?pid=908778052",
+  "Men's: Tree Stripes pajama set, button-up top and pants https://oldnavy.gap.com/browse/product.do?pid=905023042",
+  "Men's: Santa crew-neck tee https://oldnavy.gap.com/browse/product.do?pid=905005002",
+];
+const SITE_URL = "https://kristinejoy0419.github.io/PJ-Party/#wear";
+
+/** Menu item / manual run: look for pajamas for anyone still waiting. */
+function findPajamasNow() {
+  const key = PropertiesService.getScriptProperties().getProperty("GEMINI_API_KEY");
+  if (!key) throw new Error("Add GEMINI_API_KEY in Project Settings > Script properties first.");
+  findPajamas_(recipesSheet_(), key, PropertiesService.getScriptProperties().getProperty("GEMINI_MODEL") || DEFAULT_MODEL);
+}
+
+function findPajamas_(sheet, key, model) {
+  const values = sheet.getDataRange().getValues();
+  for (let i = 1; i < values.length; i++) {
+    const r = values[i];
+    if (r[C["Pajama help"] - 1] !== "Searching") continue;
+    const rowNum = i + 1;
+    try {
+      const found = searchPajamas_(key, model, r);
+      emailGuestPajamas_(r, found);
+      sheet.getRange(rowNum, C["Pajama help"]).setValue("Emailed " + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMM d"));
+    } catch (err) {
+      sheet.getRange(rowNum, C["Pajama help"]).setValue("Needs a look: " + String(err.message || err).slice(0, 300));
+    }
+  }
+}
+
+function searchPajamas_(key, model, r) {
+  const prompt = [
+    "You are helping a guest find pajamas for a family holiday pajama party. The dress code is Old Navy's",
+    "\"Tree Stripes\" holiday pajamas (red and green striped, Christmas tree print). These are the looks the host suggested:",
+    PAJAMA_LOOKS.map(s => "- " + s).join("\n"),
+    "",
+    "The guest needs: " + r[C["Sizes needed"] - 1],
+    "",
+    "Search the web now (oldnavy.gap.com first, then other stores that carry it, like resale sites) for each person and",
+    "size listed. For each person, give the best matching item, whether that size looks in stock, the price if shown,",
+    "and a link. Only use links that appeared in your search results; never make up a product link. If a size seems",
+    "sold out, say so and suggest the closest Tree Stripes alternative (another piece in the same print, or a nearby size).",
+    "",
+    "Write the answer as a short, warm plain-text email body from the party host's pajama helper, addressed to " + r[C.Name - 1] + ".",
+    "One short section per person. No markdown symbols like ** or #. Do not add a sign-off; one is added for you.",
+  ].join("\n");
+
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent";
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    muteHttpExceptions: true,
+    headers: { "x-goog-api-key": key },
+    payload: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      tools: [{ google_search: {} }],
+    }),
+  });
+  const code = res.getResponseCode();
+  const msg = JSON.parse(res.getContentText());
+  if (code !== 200) throw new Error("Gemini API error " + code + ": " + ((msg.error && msg.error.message) || "unknown"));
+  const cand = (msg.candidates || [])[0];
+  const text = cand && ((cand.content && cand.content.parts) || []).map(p => p.text || "").join("").trim();
+  if (!text) throw new Error("Gemini found nothing to send");
+  return text;
+}
+
+function emailGuestPajamas_(r, found) {
+  const body = [
+    found,
+    "",
+    "Every look the host picked, with sizes, is here: " + SITE_URL,
+    "Stock moves fast this time of year, so grab your size soon. If nothing fits, just reply and Kristine will help.",
+    "",
+    "See you in your pajamas on December 20th!",
+    "The 5th Annual Pajama Party",
+  ].join("\n");
+  MailApp.sendEmail({
+    to: r[C.Email - 1],
+    bcc: COLLECTOR_EMAIL,
+    replyTo: COLLECTOR_EMAIL,
+    name: "Kristine's Pajama Party",
+    subject: "🎄 Your Tree Stripes pajamas: what's in stock",
+    body,
+  });
 }

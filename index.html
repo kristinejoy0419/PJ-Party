@@ -256,6 +256,7 @@
   .drop-title { font-family: var(--label); text-transform: uppercase; letter-spacing: .14em; font-weight: 700; font-size: 13px; color: var(--berry); overflow-wrap: anywhere; }
   .drop.has-file .drop-title { color: var(--pine); }
   .drop-sub { font-style: italic; font-size: 16px; color: var(--ink-soft); }
+  [hidden] { display: none !important; }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
   /* ---------- The family table ---------- */
@@ -525,6 +526,24 @@
       </div>
     </div>
 
+    <p class="card-title second">Your pajamas</p>
+    <div class="field">
+      <span class="label" id="pjLabel">Have you bought your Tree Stripes pajamas?</span>
+      <div class="courses" role="radiogroup" aria-labelledby="pjLabel">
+        <input type="radio" name="pajamas" id="pj-have" value="Got them" required><label for="pj-have">Got them</label>
+        <input type="radio" name="pajamas" id="pj-looking" value="Still looking"><label for="pj-looking">Still looking for a size</label>
+      </div>
+    </div>
+    <div class="field" id="sizesField" hidden>
+      <label for="sizes">Who needs pajamas, and in what size?</label>
+      <input type="text" id="sizes" placeholder="e.g. Me: women’s M, Leo: kids 6" maxlength="300">
+      <p class="hint">Our pajama helper will hunt down what’s in stock and email you the links.</p>
+    </div>
+    <div class="field">
+      <label for="guestEmail">Your email <span class="incl" id="emailIncl">(optional)</span></label>
+      <input type="text" id="guestEmail" inputmode="email" autocomplete="email" placeholder="you@example.com" maxlength="120">
+    </div>
+
     <p class="card-title second">Your recipe</p>
     <div class="field">
       <label for="dish">The dish</label>
@@ -751,6 +770,21 @@
     return { name, type: blob.type || file.type || "application/octet-stream", data: dataUrl.split(",")[1] };
   }
 
+  // ---------- Pajama check ----------
+  const sizesField = document.getElementById("sizesField");
+  const sizesEl = document.getElementById("sizes");
+  const guestEmailEl = document.getElementById("guestEmail");
+  const pajamaChoice = () => (document.querySelector("input[name=pajamas]:checked") || {}).value || "";
+  function showSizes() {
+    const looking = pajamaChoice() === "Still looking";
+    sizesField.hidden = !looking;
+    sizesEl.required = looking;
+    guestEmailEl.required = looking;
+    document.getElementById("emailIncl").textContent = looking ? "(so we can send you the links)" : "(optional)";
+  }
+  document.querySelectorAll("input[name=pajamas]").forEach(r => r.addEventListener("change", showSizes));
+  const looksLikeEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
   document.getElementById("recipeForm").addEventListener("submit", async e => {
     e.preventDefault();
     const val = id => document.getElementById(id).value;
@@ -762,12 +796,16 @@
     });
     if (!entry.name || !entry.dish || !course) return;
     const note = clean(val("note"), 300);
+    const pajamas = pajamaChoice();
+    const email = clean(val("guestEmail"), 120);
+    const sizes = pajamas === "Still looking" ? clean(val("sizes"), 300) : "";
+    if (email && !looksLikeEmail(email)) { say("That email doesn’t look quite right. Mind checking it?", true); guestEmailEl.focus(); return; }
 
     if (LIVE) {
       submitBtn.disabled = true;
       say(file ? "Uploading your recipe…" : "Adding your dish…");
       try {
-        const payload = { ...entry, note };
+        const payload = { ...entry, note, pajamas, email, sizes };
         if (file) payload.file = await packFile(file);
         await postEntry(payload, val("website"));
       } catch (err) {
@@ -784,13 +822,15 @@
     lastAddedId = entry.id;
     if (!LIVE) savePreview();
     render();
-    say(file
+    const pjLine = sizes ? " Keep an eye on your inbox: we’re hunting down pajamas in your sizes." : "";
+    say((file
       ? `Thank you, ${entry.name}! ${entry.dish} is on the table, and your recipe is on its way to ${collector}.`
-      : `Thank you, ${entry.name}! ${entry.dish} is on the table. Come back to upload the recipe, or email it to ${collector}.`);
-    ["dish", "note"].forEach(id => document.getElementById(id).value = "");
+      : `Thank you, ${entry.name}! ${entry.dish} is on the table. Come back to upload the recipe, or email it to ${collector}.`) + pjLine);
+    ["dish", "note", "sizes"].forEach(id => document.getElementById(id).value = "");
     fileEl.value = ""; showFile();
     partyEl.value = 1;
-    document.querySelectorAll("input[name=course]").forEach(r => r.checked = false);
+    document.querySelectorAll("input[name=course], input[name=pajamas]").forEach(r => r.checked = false);
+    showSizes();
     document.getElementById("table").scrollIntoView({ behavior: "smooth" });
   });
 
