@@ -138,6 +138,18 @@
   .cues { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
   .cues .shop.cue { margin: 0; align-self: auto; font-size: 13px; padding: 11px 20px 9px 16px; }
   .look-groups { display: grid; gap: 40px; }
+  .look-group > summary { list-style: none; cursor: pointer; }
+  .look-group > summary::-webkit-details-marker { display: none; }
+  .group-name::after { content: ""; display: none; }
+  .skip-line { text-align: center; margin: -14px 0 30px; font-size: 17px; }
+  .skip-line a { color: var(--berry); text-underline-offset: 3px; }
+  @media (max-width: 700px) {
+    .look-groups { gap: 18px; }
+    .look-group > summary { padding: 6px 0; }
+    .group-name::after { display: inline-block; content: "+"; margin-left: 10px; letter-spacing: 0; font-size: 20px; line-height: 1; color: var(--berry); }
+    .look-group[open] .group-name::after { content: "\2212"; }
+  }
+  @media (min-width: 701px) { .look-group > summary { pointer-events: none; } }
   .group-title {
     display: flex; align-items: center; gap: 16px; margin: 0 0 16px;
     font-family: var(--label); text-transform: uppercase; font-weight: 700; letter-spacing: .26em; font-size: 17px; color: var(--pine);
@@ -422,10 +434,11 @@
     The original button-up set is sold out in most sizes, so grab one of the options below instead.
     Send <strong data-collector>Kristine</strong> your sizes and she’ll keep an eye out for the original to come back.
   </p>
+  <p class="skip-line"><a href="#bring">Already have your pajamas? Skip to the RSVP</a></p>
 
   <div class="look-groups">
-  <div class="look-group">
-    <h3 class="group-title">Kids</h3>
+  <details class="look-group" open>
+    <summary class="group-title"><span class="group-name">Kids</span></summary>
     <div class="looks">
       <article class="look">
         <img src="assets/kids-tree-stripes.jpg" alt="Two kids in matching red and green tree-stripe button-up pajamas" loading="lazy">
@@ -446,9 +459,9 @@
         </div>
       </article>
     </div>
-  </div>
-  <div class="look-group">
-    <h3 class="group-title">Women’s</h3>
+  </details>
+  <details class="look-group" open>
+    <summary class="group-title"><span class="group-name">Women’s</span></summary>
     <div class="looks">
       <article class="look">
         <img src="assets/womens-tree-stripes-set.jpg" alt="Woman in a matching cream tree-stripe button-up flannel pajama set" loading="lazy">
@@ -487,9 +500,9 @@
         </div>
       </article>
     </div>
-  </div>
-  <div class="look-group">
-    <h3 class="group-title">Men’s</h3>
+  </details>
+  <details class="look-group" open>
+    <summary class="group-title"><span class="group-name">Men’s</span></summary>
     <div class="looks">
       <article class="look">
         <img src="assets/mens-tree-stripes.jpg" alt="Man in a matching tree-stripe button-up pajama set and a red beanie" loading="lazy">
@@ -519,7 +532,7 @@
         </div>
       </article>
     </div>
-  </div>
+  </details>
   </div>
 </section>
 </div>
@@ -785,6 +798,12 @@
     const dataUrl = await readAsDataUrl(blob);
     const name = isImage ? file.name.replace(/\.[^.]+$/, "") + ".jpg" : file.name;
     return { name, type: blob.type || file.type || "application/octet-stream", data: dataUrl.split(",")[1] };
+  }
+
+  // ---------- Dress code ----------
+  // On phones the looks start folded so guests can open just the group they need.
+  if (matchMedia("(max-width: 700px)").matches) {
+    document.querySelectorAll(".look-group").forEach(d => d.open = false);
   }
 
   // ---------- Pajama check ----------
