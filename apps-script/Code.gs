@@ -281,7 +281,7 @@ const PAJAMA_LOOKS = [
   "Women's: Tree Stripes boxer shorts https://oldnavy.gap.com/browse/product.do?pid=908778052",
   "Men's: Tree Stripes pajama set, button-up top and pants https://oldnavy.gap.com/browse/product.do?pid=905023042",
   "Men's: Tree Stripes flannel pajama pants https://oldnavy.gap.com/browse/product.do?pid=905005002",
-  "Men's: Santa crew-neck graphic tee https://oldnavy.gap.com/browse/product.do?pid=909612032",
+  "Men's: Always Believin' Santa crew-neck tee https://oldnavy.gap.com/browse/product.do?pid=909612032",
 ];
 const SITE_URL = "https://kristinejoy0419.github.io/PJ-Party/#wear";
 
