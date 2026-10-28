@@ -25,7 +25,7 @@ Until `sheetUrl` is set, the page runs as a preview: recipes a visitor adds stay
 
 ## The recipe helper
 
-Each upload (photo, screenshot, PDF or text file) is saved to the Drive folder and logged on the **Recipes** tab with Status **New**. Every 5 minutes the helper sends new uploads to Gemini, which reads the recipe and fills in whose recipe it is, servings, ingredients, steps and the story. It sets Status to **Organized** and emails Kristine a clean copy. Anything it can't read is marked **Needs a look**, with a note saying why. The **PJ Party > Organize new recipes now** menu in the Sheet runs it right away.
+Each upload (photo, screenshot, PDF or text file) is saved to the Drive folder and logged on the **Recipes** tab with Status **New**. Every 5 minutes the helper sends new uploads to Gemini, which reads the recipe and fills in whose recipe it is, servings, ingredients, steps and the story. It sets Status to **Organized** and emails Kristine a clean copy. The typed-up recipes stay on the Sheet for the party cookbook; the site only lists who is bringing what. Anything it can't read is marked **Needs a look**, with a note saying why. The **PJ Party > Organize new recipes now** menu in the Sheet runs it right away.
 
 Organized recipes show up on the site under "Read the recipe". To fix or remove an entry, edit its row in the Sheet.
 

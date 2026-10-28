@@ -80,9 +80,8 @@ function doGet() {
   const rows = recipesSheet_().getDataRange().getValues().slice(1);
   const entries = rows.map(r => ({
     name: r[C.Name - 1], party: r[C.Party - 1], dish: r[C.Dish - 1], course: r[C.Course - 1],
-    from: r[C["Whose recipe"] - 1], ingredients: r[C.Ingredients - 1],
-    steps: r[C["How to make it"] - 1], story: r[C.Story - 1],
-    hasFile: Boolean(r[C.File - 1]),
+    from: r[C["Whose recipe"] - 1], hasFile: Boolean(r[C.File - 1]),
+    // The typed-up recipes stay on the Sheet for Kristine's cookbook, not on the site.
   }));
   return json_({ ok: true, entries });
 }
