@@ -267,9 +267,9 @@
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
   /* ---------- The family table ---------- */
-  .table-wrap { background: var(--paper-deep); border-top: 1px solid var(--line); }
-  .tally { text-align: center; font-style: italic; color: var(--ink-soft); margin: 4px 0 36px; }
+  .tally { text-align: center; font-style: italic; color: var(--ink-soft); margin: 0 0 32px; }
   .course { margin-bottom: 38px; }
+  .course:last-child { margin-bottom: 0; }
   .course h3 {
     display: flex; align-items: center; gap: 16px; margin: 0 0 10px;
     font-family: var(--label); text-transform: uppercase; font-weight: 700; letter-spacing: .26em; font-size: 15px; color: var(--pine);
@@ -289,7 +289,7 @@
   .empty { text-align: center; font-style: italic; color: var(--ink-soft); padding: 6px 0; }
 
   footer {
-    text-align: center; padding-block: 24px 64px; background: var(--paper-deep);
+    text-align: center; padding-block: 24px 64px;
     padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
     font-family: var(--display); font-size: clamp(26px, 4.4vw, 36px); line-height: 1.4; color: var(--berry);
     text-wrap: balance;
@@ -610,8 +610,10 @@
   <section class="block" id="table">
     <h2 class="eyebrow">The Family Table</h2>
     <div class="flourish" aria-hidden="true"><svg class="gingerman" viewBox="0 0 40 48"><use href="#gingerman"/></svg></div>
-    <p class="tally" id="tally"></p>
-    <div id="courses"></div>
+    <div class="card">
+      <p class="tally" id="tally"></p>
+      <div id="courses"></div>
+    </div>
   </section>
 </div>
 <footer id="footer">See you in your slippers</footer>
