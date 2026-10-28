@@ -3,7 +3,8 @@
  *
  * Setup (details in README.md):
  *  1. Paste this into Extensions > Apps Script on a Google Sheet.
- *  2. Project Settings > Script properties: add ANTHROPIC_API_KEY.
+ *  2. Project Settings > Script properties: add GEMINI_API_KEY (any Gemini key
+ *     from Google AI Studio). Optionally add GEMINI_MODEL to pick a different model.
  *  3. Run setup() once and approve the permissions.
  *  4. Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone)
  *     and copy the web app URL into config.js as sheetUrl.
@@ -12,11 +13,11 @@
  *  - doPost saves the uploaded file to a "PJ Party Recipes" Drive folder and adds
  *    a row to the "Recipes" tab with Status "New".
  *  - The recipe helper (organizeRecipes, every 5 minutes) sends each new upload
- *    to Claude, which reads the photo or PDF and fills in whose recipe it is,
+ *    to Gemini, which reads the photo or PDF and fills in whose recipe it is,
  *    servings, ingredients, steps and the story, then emails Kristine a tidy copy.
  */
 const COLLECTOR_EMAIL = "kristinejoy@gmail.com";
-const MODEL = "claude-opus-5-5";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 const FOLDER_NAME = "PJ Party Recipes";
 const COURSES = ["Bites", "Mains", "Sides", "Sweets", "Sips"];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -120,23 +121,25 @@ function doPost(e) {
 // ---------- Recipe helper ----------
 
 const RECIPE_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
+  type: "OBJECT",
   required: ["is_recipe", "whose_recipe", "serves", "ingredients", "steps", "story", "helper_notes"],
+  propertyOrdering: ["is_recipe", "whose_recipe", "serves", "ingredients", "steps", "story", "helper_notes"],
   properties: {
-    is_recipe: { type: "boolean", description: "False if the file is not a recipe or cannot be read." },
-    whose_recipe: { type: "string", description: "Possessive form of whose recipe it is, e.g. \"Lola Nena's\" or \"the Garcia family's\". Empty if unknown." },
-    serves: { type: "string", description: "Servings or yield as written, e.g. \"8 to 10\". Empty if not stated." },
-    ingredients: { type: "array", items: { type: "string" }, description: "One ingredient per item with its amount, in the order written." },
-    steps: { type: "array", items: { type: "string" }, description: "One step per item, in order, without numbering." },
-    story: { type: "string", description: "Any personal note or history written on the card or in the guest's note. Empty if none." },
-    helper_notes: { type: "string", description: "Short note for Kristine about anything unreadable, missing or guessed. Empty if all clear." },
+    is_recipe: { type: "BOOLEAN", description: "False if the file is not a recipe or cannot be read." },
+    whose_recipe: { type: "STRING", description: "Possessive form of whose recipe it is, e.g. \"Lola Nena's\" or \"the Garcia family's\". Empty if unknown." },
+    serves: { type: "STRING", description: "Servings or yield as written, e.g. \"8 to 10\". Empty if not stated." },
+    ingredients: { type: "ARRAY", items: { type: "STRING" }, description: "One ingredient per item with its amount, in the order written." },
+    steps: { type: "ARRAY", items: { type: "STRING" }, description: "One step per item, in order, without numbering." },
+    story: { type: "STRING", description: "Any personal note or history written on the card or in the guest's note. Empty if none." },
+    helper_notes: { type: "STRING", description: "Short note for Kristine about anything unreadable, missing or guessed. Empty if all clear." },
   },
 };
 
 function organizeRecipes() {
-  const key = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  const props = PropertiesService.getScriptProperties();
+  const key = props.getProperty("GEMINI_API_KEY");
   if (!key) return;
+  const model = props.getProperty("GEMINI_MODEL") || DEFAULT_MODEL;
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return; // a previous run is still going
   try {
@@ -147,7 +150,7 @@ function organizeRecipes() {
       if (r[C.Status - 1] !== "New") continue;
       const rowNum = i + 1;
       try {
-        const result = readRecipe_(key, r);
+        const result = readRecipe_(key, model, r);
         writeResult_(sheet, rowNum, result);
         emailKristine_(r, result);
       } catch (err) {
@@ -160,20 +163,18 @@ function organizeRecipes() {
   }
 }
 
-function readRecipe_(key, r) {
+function readRecipe_(key, model, r) {
   const fileId = String(r[C.File - 1]).match(/[-\w]{25,}/);
   if (!fileId) throw new Error("Could not find the uploaded file");
   const blob = DriveApp.getFileById(fileId[0]).getBlob();
   const type = blob.getContentType();
   const data = Utilities.base64Encode(blob.getBytes());
 
-  let fileBlock;
-  if (type === "application/pdf") {
-    fileBlock = { type: "document", source: { type: "base64", media_type: "application/pdf", data } };
-  } else if (/^image\/(jpeg|png|gif|webp)$/.test(type)) {
-    fileBlock = { type: "image", source: { type: "base64", media_type: type, data } };
+  let filePart;
+  if (type === "application/pdf" || /^image\/(jpeg|png|webp|heic|heif)$/.test(type)) {
+    filePart = { inline_data: { mime_type: type, data } };
   } else if (/^text\//.test(type)) {
-    fileBlock = { type: "text", text: blob.getDataAsString().slice(0, 50000) };
+    filePart = { text: blob.getDataAsString().slice(0, 50000) };
   } else {
     throw new Error("This file type (" + type + ") can't be read automatically. Open the file and type it in.");
   }
@@ -190,30 +191,26 @@ function readRecipe_(key, r) {
     "Their note: " + (r[C.Note - 1] || "(none)"),
   ].join("\n");
 
-  const res = UrlFetchApp.fetch("https://api.anthropic.com/v1/messages", {
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent";
+  const res = UrlFetchApp.fetch(url, {
     method: "post",
     contentType: "application/json",
     muteHttpExceptions: true,
-    headers: {
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-      "anthropic-beta": "server-side-fallback-2026-07-01",
-    },
+    headers: { "x-goog-api-key": key },
     payload: JSON.stringify({
-      model: MODEL,
-      max_tokens: 16000,
-      fallbacks: "default",
-      output_config: { effort: "low", format: { type: "json_schema", schema: RECIPE_SCHEMA } },
-      messages: [{ role: "user", content: [fileBlock, { type: "text", text: prompt }] }],
+      contents: [{ role: "user", parts: [filePart, { text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json", responseSchema: RECIPE_SCHEMA },
     }),
   });
 
   const code = res.getResponseCode();
   const msg = JSON.parse(res.getContentText());
-  if (code !== 200) throw new Error("Claude API error " + code + ": " + ((msg.error && msg.error.message) || "unknown"));
-  if (msg.stop_reason === "refusal") throw new Error("The recipe helper declined this file. Open it and type it in.");
-  if (msg.stop_reason === "max_tokens") throw new Error("The recipe was too long to finish. Open it and check.");
-  const text = (msg.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  if (code !== 200) throw new Error("Gemini API error " + code + ": " + ((msg.error && msg.error.message) || "unknown"));
+  const cand = (msg.candidates || [])[0];
+  if (!cand) throw new Error("Gemini returned no answer" + (msg.promptFeedback && msg.promptFeedback.blockReason ? " (" + msg.promptFeedback.blockReason + ")" : "") + ". Open the file and type it in.");
+  if (cand.finishReason === "MAX_TOKENS") throw new Error("The recipe was too long to finish. Open it and check.");
+  if (cand.finishReason && cand.finishReason !== "STOP") throw new Error("Gemini stopped early (" + cand.finishReason + "). Open the file and type it in.");
+  const text = ((cand.content && cand.content.parts) || []).map(p => p.text || "").join("");
   return JSON.parse(text);
 }
 

@@ -17,7 +17,7 @@ Table" list of who's bringing what.
 Until `sheetUrl` is set, the page runs as a preview: recipes a visitor adds stay in their own browser only.
 
 1. Create a Google Sheet, open **Extensions > Apps Script**, and paste in `apps-script/Code.gs`.
-2. In the script editor, open **Project Settings > Script properties** and add `ANTHROPIC_API_KEY` with an API key from https://platform.claude.com. This powers the recipe helper.
+2. In the script editor, open **Project Settings > Script properties** and add `GEMINI_API_KEY` with a Gemini API key (an existing key from Google AI Studio works). This powers the recipe helper. It uses `gemini-2.5-flash` by default; add a `GEMINI_MODEL` property to use a different model.
 3. Pick `setup` in the function menu and click **Run**. Approve the permissions (Sheets, Drive, Gmail, triggers). This creates the **Recipes** tab, a **PJ Party Recipes** Drive folder, and the 5-minute helper schedule.
 4. **Deploy > New deployment**, type **Web app**, execute as **Me**, access **Anyone**.
 5. Copy the web app URL into `config.js` as `sheetUrl` and commit.
@@ -25,6 +25,6 @@ Until `sheetUrl` is set, the page runs as a preview: recipes a visitor adds stay
 
 ## The recipe helper
 
-Each upload (photo, screenshot, PDF or text file) is saved to the Drive folder and logged on the **Recipes** tab with Status **New**. Every 5 minutes the helper sends new uploads to Claude, which reads the recipe and fills in whose recipe it is, servings, ingredients, steps and the story. It sets Status to **Organized** and emails Kristine a clean copy. Anything it can't read is marked **Needs a look**, with a note saying why. The **PJ Party > Organize new recipes now** menu in the Sheet runs it right away.
+Each upload (photo, screenshot, PDF or text file) is saved to the Drive folder and logged on the **Recipes** tab with Status **New**. Every 5 minutes the helper sends new uploads to Gemini, which reads the recipe and fills in whose recipe it is, servings, ingredients, steps and the story. It sets Status to **Organized** and emails Kristine a clean copy. Anything it can't read is marked **Needs a look**, with a note saying why. The **PJ Party > Organize new recipes now** menu in the Sheet runs it right away.
 
 Organized recipes show up on the site under "Read the recipe". To fix or remove an entry, edit its row in the Sheet.
