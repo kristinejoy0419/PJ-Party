@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>The 5th Annual Pajama Party</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Josefin+Sans:wght@400;600;700&family=Crimson+Pro:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  /* Layout: one column. A gingerbread-house invite on a knit-sweater ground, then the recipe card form, then the family table. */
+  :root {
+    color-scheme: light;
+    --knit: #ece7de;
+    --knit-stitch: #e0d9cd;
+    --paper: #fbf7f0;
+    --paper-deep: #f3ece0;
+    --ink: #4a3426;
+    --ink-soft: #7a6152;
+    --berry: #b8322f;
+    --berry-deep: #94241f;
+    --pine: #2f6a45;
+    --pine-soft: #6f9a7c;
+    --ginger: #c8955f;
+    --roof: #8b5a3c;
+    --icing: #fffdf8;
+    --line: #dccfbd;
+    --display: "Pacifico", "Brush Script MT", cursive;
+    --label: "Josefin Sans", "Gill Sans", "Trebuchet MS", sans-serif;
+    --body: "Crimson Pro", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 19px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    background-color: var(--knit);
+    /* cable-knit stitches */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='30' viewBox='0 0 28 30'%3E%3Cg fill='%23e0d9cd'%3E%3Cellipse cx='8' cy='15' rx='5' ry='11' transform='rotate(-28 8 15)'/%3E%3Cellipse cx='20' cy='15' rx='5' ry='11' transform='rotate(28 20 15)'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 28px 30px;
+  }
+
+  /* ---------- Hero: the invite ---------- */
+  .hero {
+    padding-block: 32px 8px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .invite {
+    width: 100%; max-width: 600px; margin: 0 auto;
+    container-type: inline-size;
+    filter: drop-shadow(0 22px 28px rgba(74, 52, 38, .28));
+  }
+  .house { position: relative; }
+  .house svg { display: block; width: 100%; height: auto; }
+  .house .overlay {
+    position: absolute; left: 0; right: 0; top: 44%;
+    text-align: center; color: var(--icing); pointer-events: none;
+  }
+  .house h1 {
+    font-family: var(--display); font-weight: 400; margin: 0;
+    font-size: 11.5cqw; line-height: 1.15;
+    text-shadow: 0 2px 0 rgba(139, 90, 60, .45);
+  }
+  .card-base {
+    background: var(--paper);
+    text-align: center;
+    padding: 2cqw 7cqw 8cqw;
+    margin-top: -1px;
+  }
+  .card-base .caps {
+    font-family: var(--label); font-weight: 600; text-transform: uppercase; letter-spacing: .22em;
+    color: var(--berry); font-size: clamp(12px, 3cqw, 17px); margin: 0;
+  }
+  .kicker-base {
+    font-family: var(--label); font-weight: 700; letter-spacing: .34em; text-transform: uppercase;
+    color: var(--pine); font-size: clamp(13px, 3.2cqw, 18px); margin: 0 0 3cqw;
+  }
+  .card-base .when {
+    font-family: var(--display); color: var(--berry); font-weight: 400;
+    font-size: clamp(30px, 8.6cqw, 52px); line-height: 1.3; margin: 2.5cqw 0 3cqw;
+  }
+  .card-base .stack { display: grid; gap: 2.2cqw; }
+  .card-base .cal { margin-top: 5cqw; position: relative; display: inline-block; }
+  .tbd { background: var(--paper-deep); border-radius: 4px; padding: 0 .35em; }
+
+  /* Add to calendar */
+  .cal-menu {
+    position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%);
+    background: var(--icing); border: 1px solid var(--line); border-radius: 12px;
+    padding: 6px; min-width: 210px; z-index: 5; text-align: left;
+    box-shadow: 0 16px 30px -18px rgba(74, 52, 38, .5);
+  }
+  .cal-menu a {
+    display: block; padding: 8px 14px; border-radius: 8px; text-decoration: none; color: var(--ink);
+    font-family: var(--label); font-size: 15px; letter-spacing: .08em;
+  }
+  .cal-menu a:hover, .cal-menu a:focus-visible { background: var(--paper-deep); outline: none; }
+
+  .scroll-cue {
+    display: block; width: max-content; text-align: center; margin: 30px auto 0;
+    font-family: var(--label); text-transform: uppercase; font-weight: 600;
+    letter-spacing: .24em; font-size: 14px; color: var(--ink-soft); text-decoration: none;
+  }
+  .scroll-cue::after { content: "\2193"; display: block; font-size: 18px; margin-top: 2px; }
+
+  /* ---------- Shared section bits ---------- */
+  .band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  section.block { max-width: 680px; margin: 0 auto; padding-block: 56px; }
+  .eyebrow {
+    font-family: var(--display); font-weight: 400; color: var(--berry);
+    font-size: clamp(32px, 6vw, 42px); line-height: 1.2; text-align: center; margin: 0; text-wrap: balance;
+  }
+  .flourish { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0 8px; color: var(--pine); font-size: 18px; }
+  .flourish::before, .flourish::after { content: ""; height: 1px; width: 80px; background: var(--line); }
+  .intro { max-width: 34em; margin: 0 auto 30px; text-align: center; color: var(--ink-soft); text-wrap: pretty; }
+  .intro strong { color: var(--ink); font-weight: 500; }
+
+  /* ---------- What to wear ---------- */
+  section.block.wide { max-width: 1040px; }
+  .card-base .caps a { color: inherit; text-underline-offset: 3px; }
+  .cues { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; margin-top: 30px; }
+  .cues .scroll-cue { margin: 0; }
+  .looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  .look {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+    display: flex; flex-direction: column; min-width: 0;
+  }
+  .look img, .look .swatch { display: block; width: 100%; max-width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center top; background: #fff; }
+  .look .swatch {
+    background-color: #fdfbf6;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='56' viewBox='0 0 48 56'%3E%3Cg fill='%232f8a4a'%3E%3Cpath d='M12 6 l6 10 h-3 l5 8 h-16 l5 -8 h-3z'/%3E%3Cpath d='M36 34 l6 10 h-3 l5 8 h-16 l5 -8 h-3z'/%3E%3C/g%3E%3C/svg%3E"),
+      repeating-linear-gradient(90deg, transparent 0 22px, #c63b3b 22px 25px, transparent 25px 28px, #c63b3b 28px 30px, transparent 30px 48px);
+    background-size: 48px 56px, 48px 100%;
+  }
+  .look-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .who-for { margin: 0; font-family: var(--label); text-transform: uppercase; letter-spacing: .16em; font-weight: 700; font-size: 12px; color: var(--pine); }
+  .look h3 { margin: 0; font-size: 22px; font-weight: 500; line-height: 1.25; }
+  .look .note { margin: 0; font-size: 16px; color: var(--ink-soft); flex: 1; }
+  .pill { display: inline-block; font-family: var(--label); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; font-weight: 700; color: var(--icing); background: var(--berry); border-radius: 999px; padding: 3px 9px 1px; margin-right: 4px; }
+  .shop {
+    align-self: flex-start; margin-top: 8px; text-decoration: none;
+    font-family: var(--label); text-transform: uppercase; letter-spacing: .14em; font-weight: 700; font-size: 12px;
+    color: var(--berry); border: 1px solid var(--berry); border-radius: 999px; padding: 8px 16px 6px;
+  }
+  .shop:hover { background: var(--berry); color: var(--icing); }
+  .shop::after { content: " \2197"; }
+
+  /* ---------- Recipe card form ---------- */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    outline: 1px dashed var(--berry); outline-offset: -9px;
+    border-radius: 18px;
+    padding: 44px 40px 34px;
+    box-shadow: 0 24px 40px -30px rgba(74, 52, 38, .5);
+  }
+  .card-title {
+    display: flex; align-items: center; gap: 12px; margin: 0 0 22px;
+    font-family: var(--label); text-transform: uppercase; letter-spacing: .28em; font-weight: 700; font-size: 14px; color: var(--pine);
+  }
+  .card-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .card-title.second { margin-top: 14px; }
+  .field { margin-bottom: 20px; }
+  label, .label {
+    display: block; font-family: var(--label); text-transform: uppercase; font-weight: 600;
+    letter-spacing: .16em; font-size: 13px; margin-bottom: 4px; color: var(--ink);
+  }
+  label .incl { font-family: var(--body); text-transform: none; font-style: italic; font-weight: 400; letter-spacing: 0; font-size: 15px; color: var(--ink-soft); }
+  input[type=text], textarea {
+    width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent;
+    font: inherit; font-size: 20px; color: var(--ink); padding: 6px 2px; border-radius: 0;
+  }
+  textarea {
+    resize: vertical; min-height: 6.2em; line-height: 1.55;
+    /* ruled recipe-card lines */
+    background-image: linear-gradient(transparent calc(1.55em - 1px), var(--line) calc(1.55em - 1px), var(--line) 1.55em, transparent 1.55em);
+    background-size: 100% 1.55em; background-attachment: local;
+    border-bottom: 0; padding: 0 2px;
+  }
+  input::placeholder, textarea::placeholder { color: #ad9a8c; font-style: italic; }
+  input[type=text]:focus { outline: none; border-bottom-color: var(--berry); }
+  textarea:focus { outline: none; box-shadow: inset 3px 0 0 var(--berry); }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: start; }
+  .row > * { min-width: 0; }
+  .stepper { display: flex; align-items: center; border-bottom: 1px solid var(--line); }
+  .stepper button { border: 0; background: none; padding: 4px 10px; font-size: 22px; letter-spacing: 0; color: var(--ink-soft); border-radius: 6px; text-transform: none; }
+  .stepper button:hover { color: var(--ink); background: var(--paper-deep); }
+  .stepper input {
+    width: 2.6em; padding: 6px 0; text-align: center; border: 0; background: transparent; font: inherit; font-size: 20px; color: var(--ink);
+    -moz-appearance: textfield; appearance: textfield;
+  }
+  .stepper input::-webkit-inner-spin-button, .stepper input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper input:focus { outline: none; }
+  .stepper:focus-within { border-bottom-color: var(--berry); }
+  .hint { font-style: italic; font-size: 15px; color: var(--ink-soft); margin: 4px 0 0; }
+  .courses { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .courses input { position: absolute; opacity: 0; pointer-events: none; }
+  .courses label {
+    margin: 0; cursor: pointer; font-weight: 600; font-size: 13px; letter-spacing: .14em;
+    border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px 5px; color: var(--ink-soft);
+    background: var(--icing); transition: background .15s, color .15s;
+  }
+  .courses input:checked + label { background: var(--pine); border-color: var(--pine); color: var(--icing); }
+  .courses input:focus-visible + label { outline: 2px solid var(--berry); outline-offset: 2px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 28px; }
+  button {
+    font-family: var(--label); text-transform: uppercase; letter-spacing: .16em; font-size: 14px; font-weight: 700;
+    cursor: pointer; padding: 13px 26px 11px; border-radius: 999px; transition: background .15s, color .15s;
+  }
+  .btn-primary { background: var(--berry); color: var(--icing); border: 1px solid var(--berry); }
+  .btn-primary:hover { background: var(--berry-deep); }
+  .btn-ghost { background: var(--icing); color: var(--berry); border: 1px solid var(--berry); }
+  .btn-ghost:hover { background: var(--paper-deep); }
+  button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--pine); outline-offset: 3px; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .form-msg { text-align: center; font-style: italic; color: var(--pine); min-height: 1.5em; margin: 14px 0 0; }
+  .form-msg.error { color: var(--berry-deep); }
+  .fine { text-align: center; font-style: italic; font-size: 16px; color: var(--ink-soft); margin: 4px auto 0; max-width: 30em; }
+  .email-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; margin: 8px 0 0; }
+  .email { font-size: 19px; font-weight: 500; user-select: all; overflow-wrap: anywhere; }
+  .btn-small { padding: 7px 16px 5px; font-size: 12px; }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+  /* ---------- The family table ---------- */
+  .table-wrap { background: var(--paper-deep); border-top: 1px solid var(--line); }
+  .tally { text-align: center; font-style: italic; color: var(--ink-soft); margin: 4px 0 36px; }
+  .course { margin-bottom: 38px; }
+  .course h3 {
+    display: flex; align-items: center; gap: 16px; margin: 0 0 10px;
+    font-family: var(--label); text-transform: uppercase; font-weight: 700; letter-spacing: .26em; font-size: 15px; color: var(--pine);
+  }
+  .course h3::before, .course h3::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .course h3 .count { font-family: var(--body); text-transform: none; letter-spacing: 0; font-style: italic; font-weight: 400; font-size: 16px; color: var(--ink-soft); }
+  .course ul { list-style: none; margin: 0; padding: 0; }
+  .course li { padding: 8px 0; border-bottom: 1px dotted var(--line); }
+  .course li:last-child { border-bottom: 0; }
+  .course li.new { animation: fade .5s ease; }
+  .dish-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+  .dish-line .dish { font-size: 22px; font-weight: 500; flex: 1 1 auto; min-width: 0; }
+  .dish-line .who { font-style: italic; color: var(--ink-soft); }
+  .dish-line .party { font-style: normal; font-family: var(--label); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; color: var(--pine-soft); }
+  .from { font-family: var(--display); color: var(--berry); font-size: 17px; line-height: 1.6; }
+  details { margin-top: 4px; }
+  summary {
+    cursor: pointer; width: max-content; list-style: none;
+    font-family: var(--label); text-transform: uppercase; letter-spacing: .16em; font-weight: 600; font-size: 12px; color: var(--berry);
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "+ "; }
+  details[open] summary::before { content: "\2212 "; }
+  .recipe {
+    margin-top: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; font-size: 17px;
+  }
+  .recipe h4 { margin: 0 0 4px; font-family: var(--label); text-transform: uppercase; letter-spacing: .18em; font-size: 12px; color: var(--pine); }
+  .recipe p { margin: 0 0 14px; white-space: pre-line; }
+  .recipe p:last-child { margin-bottom: 0; }
+  .recipe .story { font-style: italic; color: var(--ink-soft); }
+  .empty { text-align: center; font-style: italic; color: var(--ink-soft); padding: 6px 0; }
+
+  footer {
+    text-align: center; padding-block: 24px 64px; background: var(--paper-deep);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    font-family: var(--display); font-size: clamp(26px, 4.4vw, 36px); line-height: 1.4; color: var(--berry);
+    text-wrap: balance;
+  }
+
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+  @media (max-width: 560px) {
+    body { font-size: 18px; }
+    .row { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .stepper { width: max-content; }
+    .card { padding: 36px 22px 28px; }
+    .card-base { padding-bottom: 10cqw; }
+    .actions button { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="invite">
+    <div class="house">
+      <svg viewBox="0 0 600 580" role="img" aria-label="A gingerbread house with a red door, a wreath and two pine trees">
+        <defs>
+          <pattern id="icing" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M-2 14 Q12 40 25 14 M23 14 Q37 40 52 14" fill="none" stroke="#fffdf8" stroke-width="4.5" stroke-linecap="round"/>
+            <circle cx="25" cy="22" r="5.5" fill="none" stroke="#fffdf8" stroke-width="4"/>
+          </pattern>
+          <pattern id="cane" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)">
+            <rect width="14" height="14" fill="#fffdf8"/>
+            <rect width="14" height="5" fill="#c63b3b"/>
+          </pattern>
+        </defs>
+        <!-- chimney -->
+        <rect x="96" y="22" width="86" height="80" fill="#d9a066"/>
+        <g stroke="#fffdf8" stroke-width="2.5" opacity=".8">
+          <line x1="96" y1="48" x2="182" y2="48"/><line x1="96" y1="74" x2="182" y2="74"/>
+          <line x1="125" y1="22" x2="125" y2="48"/><line x1="155" y1="48" x2="155" y2="74"/><line x1="125" y1="74" x2="125" y2="100"/>
+        </g>
+        <rect x="88" y="6" width="102" height="24" rx="6" fill="#ddd6cc" stroke="#b9ada0" stroke-width="2"/>
+        <!-- roof -->
+        <rect x="30" y="96" width="540" height="190" fill="#8b5a3c"/>
+        <rect x="30" y="96" width="540" height="190" fill="url(#icing)"/>
+        <!-- house body -->
+        <rect x="58" y="258" width="484" height="322" fill="#c8955f"/>
+        <rect x="58" y="258" width="14" height="322" fill="url(#cane)"/>
+        <rect x="528" y="258" width="14" height="322" fill="url(#cane)"/>
+        <!-- gable -->
+        <polygon points="300,72 140,280 460,280" fill="#c8955f"/>
+        <polyline points="128,286 300,62 472,286" fill="none" stroke="#fffdf8" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+        <g fill="none" stroke="#fffdf8" stroke-width="4">
+          <circle cx="300" cy="196" r="34"/>
+          <line x1="300" y1="162" x2="300" y2="230"/><line x1="266" y1="196" x2="334" y2="196"/>
+          <path d="M276 150 q-10 -14 6 -18 M324 150 q10 -14 -6 -18 M300 146 q-10 -12 0 -20 q10 8 0 20"/>
+        </g>
+        <g transform="translate(0 60)">
+        <!-- windows -->
+        <g fill="none" stroke="#fffdf8" stroke-width="4">
+          <path d="M100 470 V390 a42 42 0 0 1 84 0 V470 Z"/>
+          <line x1="142" y1="348" x2="142" y2="470"/><line x1="100" y1="400" x2="184" y2="400"/><line x1="100" y1="436" x2="184" y2="436"/>
+          <path d="M416 470 V390 a42 42 0 0 1 84 0 V470 Z"/>
+          <line x1="458" y1="348" x2="458" y2="470"/><line x1="416" y1="400" x2="500" y2="400"/><line x1="416" y1="436" x2="500" y2="436"/>
+        </g>
+        <!-- door + wreath -->
+        <path d="M250 520 V420 a50 50 0 0 1 100 0 V520 Z" fill="#c63b3b"/>
+        <circle cx="300" cy="420" r="22" fill="none" stroke="#2f6a45" stroke-width="12"/>
+        <g fill="#c63b3b"><circle cx="286" cy="406" r="3"/><circle cx="315" cy="410" r="3"/><circle cx="312" cy="436" r="3"/><circle cx="287" cy="433" r="3"/></g>
+        <path d="M300 442 l-9 12 M300 442 l9 12" stroke="#94241f" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="334" cy="474" r="5" fill="#e6b27a"/>
+        <!-- trees -->
+        <g fill="#2f6a45">
+          <path d="M66 330 L108 410 H84 L120 470 H92 L130 520 H2 L40 470 H12 L48 410 H24 Z"/>
+          <path d="M534 330 L576 410 H552 L588 470 H560 L598 520 H470 L508 470 H480 L516 410 H492 Z"/>
+        </g>
+        <!-- snow drift -->
+        <path d="M0 520 V504 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 a17 17 0 0 1 34 0 V520 Z" fill="#fbf7f0"/>
+        </g>
+      </svg>
+      <div class="overlay">
+        <h1 data-field="title">Pajama Party</h1>
+      </div>
+    </div>
+    <div class="card-base">
+      <p class="kicker-base" data-field="kicker">The 5th Annual</p>
+      <div class="stack">
+        <p class="caps">Come cozy, come hungry</p>
+        <p class="caps">and bring a family recipe to share</p>
+      </div>
+      <p class="when" data-field="date"><span class="tbd">Date to come</span></p>
+      <div class="stack">
+        <p class="caps" data-field="time"><span class="tbd">Time to come</span></p>
+        <p class="caps" data-field="place"><span class="tbd">Location to come</span></p>
+        <p class="caps">Dress code: <a href="#wear">Tree Stripes pajamas</a></p>
+      </div>
+      <div class="cal" id="calWrap" hidden>
+        <button type="button" class="btn-ghost" id="calBtn" aria-expanded="false" aria-controls="calMenu">Add to calendar</button>
+        <div class="cal-menu" id="calMenu" hidden>
+          <a id="calGoogle" target="_blank" rel="noopener">Google Calendar</a>
+          <a id="calOutlook" target="_blank" rel="noopener">Outlook</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <nav class="cues" aria-label="On this page">
+    <a class="scroll-cue" href="#wear">what to wear</a>
+    <a class="scroll-cue" href="#bring">share your recipe</a>
+    <a class="scroll-cue" href="#table">who’s bringing what</a>
+  </nav>
+</header>
+
+<main>
+<div class="band">
+<section class="block wide" id="wear">
+  <h2 class="eyebrow">The Dress Code: Tree Stripes</h2>
+  <div class="flourish" aria-hidden="true">&#10052;</div>
+  <p class="intro">
+    We match every year, and this year it’s Old Navy’s red-and-green <strong>Tree Stripes</strong>.
+    The original button-up set is sold out in most sizes, so grab one of the options below instead.
+    Send <strong data-collector>Kristine</strong> your sizes and she’ll keep an eye out for the original to come back.
+  </p>
+
+  <div class="looks">
+    <article class="look">
+      <img src="assets/kids-tree-stripes.jpg" alt="Two kids in matching red and green tree-stripe button-up pajamas" loading="lazy">
+      <div class="look-body">
+        <p class="who-for">Kids · The original</p>
+        <h3>Tree Stripes flannel set</h3>
+        <p class="note"><span class="pill">Mostly sold out</span> Text Kristine your kids’ sizes and she’ll watch for restocks.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=904628002&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+    <article class="look">
+      <img src="assets/kids-snug-believin.jpg" alt="Two kids in cream Always Believin’ Santa tops with tree-stripe pants" loading="lazy">
+      <div class="look-body">
+        <p class="who-for">Kids · Snug fit</p>
+        <h3>Always Believin’ set</h3>
+        <p class="note">Santa top with the tree-stripe pants. The easy pick for kids this year.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=904646042&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+    <article class="look">
+      <img src="assets/womens-believin-tee.jpg" alt="Cream t-shirt with a peace-sign Santa and the words Always Believin’" loading="lazy">
+      <div class="look-body">
+        <p class="who-for">Women’s · Top</p>
+        <h3>Always Believin’ tee</h3>
+        <p class="note">Pair it with the flannel pants or the boxer shorts.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=910769032&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+    <article class="look">
+      <div class="swatch" role="img" aria-label="Red and green tree-stripe flannel print"></div>
+      <div class="look-body">
+        <p class="who-for">Women’s · Bottoms</p>
+        <h3>Tree Stripes flannel pants</h3>
+        <p class="note">The cozy, full-length option.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908779022&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+    <article class="look">
+      <img src="assets/womens-boxer-shorts.jpg" alt="Tree-stripe pajama boxer shorts with a red drawstring" loading="lazy">
+      <div class="look-body">
+        <p class="who-for">Women’s · Bottoms</p>
+        <h3>Tree Stripes boxer shorts</h3>
+        <p class="note">For anyone who runs warm.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908778052&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+    <article class="look">
+      <img src="assets/mens-tree-stripes.jpg" alt="Man in a matching tree-stripe button-up pajama set and a red beanie" loading="lazy">
+      <div class="look-body">
+        <p class="who-for">Men’s · Matching set</p>
+        <h3>Tree Stripes pajama set</h3>
+        <p class="note">Button-up top and pants, all in the stripe.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=905023042&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+    <article class="look">
+      <img src="assets/mens-santa-tee.jpg" alt="White crew-neck t-shirt with a vintage red Santa print" loading="lazy">
+      <div class="look-body">
+        <p class="who-for">Men’s · Top</p>
+        <h3>Santa crew-neck tee</h3>
+        <p class="note">Wear it with the tree-stripe pants.</p>
+        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=905005002&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+      </div>
+    </article>
+  </div>
+</section>
+</div>
+
+<div class="band">
+<section class="block" id="bring">
+  <h2 class="eyebrow">Bring a Taste of Home</h2>
+  <div class="flourish" aria-hidden="true">&#10052;</div>
+  <p class="intro">
+    Five years of pajama parties, and this year we’re filling the table with the dishes that raised us.
+    Bring a family recipe to share: the one your mom made every holiday, your grandpa’s secret sauce, the cookies you’d know with your eyes closed.
+    Then pass the recipe along to <strong data-collector>Kristine</strong>, who is gathering every one so we can all recreate them at home.
+  </p>
+
+  <form class="card" id="recipeForm" autocomplete="off">
+    <p class="card-title">About you</p>
+    <div class="row field">
+      <div>
+        <label for="name">Your name</label>
+        <input type="text" id="name" placeholder="e.g. Maya" required maxlength="60">
+      </div>
+      <div>
+        <label for="party">Total in your party <span class="incl">(including you)</span></label>
+        <div class="stepper">
+          <button type="button" data-step="-1" aria-label="One fewer">&minus;</button>
+          <input type="number" id="party" min="1" max="12" value="1" inputmode="numeric">
+          <button type="button" data-step="1" aria-label="One more">+</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="card-title second">Your recipe card</p>
+    <div class="field">
+      <label for="dish">The dish</label>
+      <input type="text" id="dish" placeholder="e.g. Pancit for a crowd" required maxlength="80">
+    </div>
+    <div class="field">
+      <label for="from">Whose recipe is it?</label>
+      <input type="text" id="from" placeholder="e.g. Lola Nena’s, Dad’s, our family’s since 1962" maxlength="80">
+    </div>
+    <div class="field">
+      <span class="label" id="courseLabel">What kind of dish</span>
+      <div class="courses" role="radiogroup" aria-labelledby="courseLabel" id="courseOptions"></div>
+    </div>
+    <div class="field">
+      <label for="ingredients">Ingredients</label>
+      <textarea id="ingredients" rows="4" placeholder="One per line, amounts are great but a pinch of this counts too" maxlength="3000"></textarea>
+    </div>
+    <div class="field">
+      <label for="steps">How to make it</label>
+      <textarea id="steps" rows="4" placeholder="Write it the way it was taught to you" maxlength="5000"></textarea>
+    </div>
+    <div class="field">
+      <label for="story">The story behind it <span class="incl">(optional)</span></label>
+      <textarea id="story" rows="2" placeholder="Who made it, when it showed up, why it matters" maxlength="1500"></textarea>
+    </div>
+
+    <div class="hp" aria-hidden="true">
+      <label for="website">Leave this empty</label>
+      <input type="text" id="website" tabindex="-1" autocomplete="off">
+    </div>
+
+    <div class="actions">
+      <button type="submit" class="btn-primary" id="submitBtn">Add to the table</button>
+    </div>
+    <p class="form-msg" id="formMsg" role="status"></p>
+    <p class="fine">Your recipe card goes straight to <span data-collector>Kristine</span>. Still writing it down? Add your dish now and email the recipe whenever it’s ready:</p>
+    <p class="email-line"><span class="email" id="email" data-field="email">kristinejoy@gmail.com</span> <button type="button" class="btn-ghost btn-small" id="copyEmail">Copy</button></p>
+  </form>
+</section>
+</div>
+
+<div class="table-wrap band">
+  <section class="block" id="table">
+    <h2 class="eyebrow">The Family Table</h2>
+    <div class="flourish" aria-hidden="true">&#10052;</div>
+    <p class="tally" id="tally"></p>
+    <div id="courses"></div>
+  </section>
+</div>
+<footer id="footer">See you in your slippers</footer>
+</main>
+
+<script src="config.js"></script>
+<script>
+  const CONFIG = window.PJ_PARTY_CONFIG || {};
+  const COURSES = ["Bites", "Mains", "Sides", "Sweets", "Sips"];
+
+  // ---------- Data ----------
+  // Live mode: recipes are read from and written to the Google Sheet behind
+  // config.js. Without a Sheet URL the page runs as a preview whose entries
+  // stay in this browser only.
+  const SHEET_URL = (CONFIG.sheetUrl || "").trim();
+  const LIVE = Boolean(SHEET_URL);
+  const STORE_KEY = "pj-party-5-preview-v1";
+  let entries = [];
+  let lastAddedId = null;
+  let loaded = !LIVE;
+
+  function loadPreview() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return [];
+  }
+  function savePreview() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(entries)); } catch (e) {}
+  }
+
+  const clean = (v, max) => String(v || "").trim().slice(0, max);
+  function normalize(e, i) {
+    return {
+      id: e.id || "s" + i,
+      name: clean(e.name, 60), dish: clean(e.dish, 80), from: clean(e.from, 80),
+      course: COURSES.includes(e.course) ? e.course : "Mains",
+      party: Number(e.party) || 1,
+      ingredients: clean(e.ingredients, 3000), steps: clean(e.steps, 5000), story: clean(e.story, 1500),
+    };
+  }
+
+  async function fetchSheet() {
+    const res = await fetch(SHEET_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    entries = (data.entries || []).map(normalize).filter(e => e.name && e.dish);
+    if (data.event) applyEvent(data.event);
+    loaded = true;
+    render();
+  }
+
+  async function postEntry(entry, honeypot) {
+    const res = await fetch(SHEET_URL, {
+      method: "POST",
+      // text/plain keeps this a "simple" request, which Apps Script accepts cross-origin
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ ...entry, website: honeypot }),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Not saved");
+  }
+
+  // Course pills
+  const optionsEl = document.getElementById("courseOptions");
+  COURSES.forEach((c, i) => {
+    const id = "c-" + c.toLowerCase();
+    optionsEl.insertAdjacentHTML("beforeend",
+      `<input type="radio" name="course" id="${id}" value="${c}" ${i === 0 ? "required" : ""}><label for="${id}">${c}</label>`);
+  });
+
+  const esc = s => String(s).replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const headcount = () => entries.reduce((sum, e) => sum + (Number(e.party) || 1), 0);
+
+  // Party size stepper
+  const partyEl = document.getElementById("party");
+  const clampParty = v => Math.min(12, Math.max(1, Math.round(Number(v) || 1)));
+  document.querySelectorAll(".stepper button").forEach(b =>
+    b.addEventListener("click", () => { partyEl.value = clampParty(Number(partyEl.value) + Number(b.dataset.step)); }));
+  partyEl.addEventListener("change", () => { partyEl.value = clampParty(partyEl.value); });
+
+  function recipeCard(e) {
+    if (!e.ingredients && !e.steps && !e.story) return "";
+    return `<details><summary>Read the recipe</summary><div class="recipe">
+      ${e.story ? `<p class="story">${esc(e.story)}</p>` : ""}
+      ${e.ingredients ? `<h4>Ingredients</h4><p>${esc(e.ingredients)}</p>` : ""}
+      ${e.steps ? `<h4>How to make it</h4><p>${esc(e.steps)}</p>` : ""}
+    </div></details>`;
+  }
+
+  function render() {
+    const wrap = document.getElementById("courses");
+    if (!loaded) {
+      wrap.innerHTML = `<p class="empty">Setting the table…</p>`;
+      document.getElementById("tally").textContent = "";
+      return;
+    }
+    wrap.innerHTML = COURSES.map(c => {
+      const items = entries.filter(e => e.course === c);
+      const list = items.length
+        ? `<ul>${items.map(e => `
+            <li class="${e.id === lastAddedId ? "new" : ""}">
+              <div class="dish-line">
+                <span class="dish">${esc(e.dish)}</span>
+                <span class="who">${esc(e.name)}${(e.party || 1) > 1 ? ` <span class="party">party of ${e.party}</span>` : ""}</span>
+              </div>
+              ${e.from ? `<div class="from">from ${esc(e.from.replace(/^from\s+/i, ""))} kitchen</div>` : ""}
+              ${recipeCard(e)}
+            </li>`).join("")}</ul>`
+        : `<p class="empty">Nothing here yet. Room for yours.</p>`;
+      return `<div class="course"><h3>${c} <span class="count">${items.length}</span></h3>${list}</div>`;
+    }).join("");
+
+    const n = entries.length;
+    const guests = headcount();
+    document.getElementById("tally").textContent = n
+      ? `${n} family recipe${n === 1 ? "" : "s"} and ${guests} guest${guests === 1 ? "" : "s"}, so far`
+      : "No recipes yet. Yours could be the first one on the table.";
+    document.getElementById("footer").textContent = guests
+      ? `See you in your slippers, all ${guests} of you`
+      : "See you in your slippers";
+  }
+
+  const formMsg = document.getElementById("formMsg");
+  const submitBtn = document.getElementById("submitBtn");
+  function say(text, isError) { formMsg.textContent = text; formMsg.classList.toggle("error", Boolean(isError)); }
+
+  document.getElementById("recipeForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const val = id => document.getElementById(id).value;
+    const course = (document.querySelector("input[name=course]:checked") || {}).value;
+    const entry = normalize({
+      id: "u" + Date.now(), name: val("name"), dish: val("dish"), from: val("from"), course,
+      party: clampParty(partyEl.value), ingredients: val("ingredients"), steps: val("steps"), story: val("story"),
+    });
+    if (!entry.name || !entry.dish || !course) return;
+
+    if (LIVE) {
+      submitBtn.disabled = true;
+      say("Adding your recipe…");
+      try {
+        await postEntry(entry, val("website"));
+      } catch (err) {
+        submitBtn.disabled = false;
+        say("That didn’t save. Check your connection and try again.", true);
+        return;
+      }
+      submitBtn.disabled = false;
+    }
+
+    entries.push(entry);
+    lastAddedId = entry.id;
+    if (!LIVE) savePreview();
+    render();
+    const hasRecipe = entry.ingredients || entry.steps;
+    say(hasRecipe
+      ? `Thank you, ${entry.name}! ${entry.dish} is on the table, and your recipe is on its way to ${collector}.`
+      : `Thank you, ${entry.name}! ${entry.dish} is on the table. When the recipe is ready, email it to ${collector}.`);
+    ["dish", "from", "ingredients", "steps", "story"].forEach(id => document.getElementById(id).value = "");
+    partyEl.value = 1;
+    document.querySelectorAll("input[name=course]").forEach(r => r.checked = false);
+    document.getElementById("table").scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.getElementById("copyEmail").addEventListener("click", e => {
+    const btn = e.currentTarget, text = document.getElementById("email").textContent.trim();
+    const done = () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1800); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(document.getElementById("email")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+  });
+
+  // ---------- Event details (from config.js, or the Sheet's Event tab) ----------
+  let collector = "Kristine";
+  const EVENT = { title: "5th Annual Pajama Party", start: "", end: "", location: "", details: "Wear your coziest pajamas and bring a family recipe to share." };
+  const enc = encodeURIComponent;
+  const compact = iso => iso.replace(/[-:]/g, "") + "00";
+
+  function applyEvent(ev) {
+    document.querySelectorAll("[data-field]").forEach(el => {
+      const v = ev[el.dataset.field];
+      if (typeof v === "string" && v.trim()) el.textContent = v.trim();
+    });
+    if (typeof ev.collector === "string" && ev.collector.trim()) {
+      collector = ev.collector.trim();
+      document.querySelectorAll("[data-collector]").forEach(el => el.textContent = collector);
+    }
+    ["start", "end", "location", "details"].forEach(k => {
+      if (typeof ev[k] === "string" && ev[k].trim()) EVENT[k] = ev[k].trim();
+    });
+    if (typeof ev.calendarTitle === "string" && ev.calendarTitle.trim()) EVENT.title = ev.calendarTitle.trim();
+    setCalendarLinks();
+  }
+
+  function setCalendarLinks() {
+    const ok = /^\d{4}-\d\d-\d\dT\d\d:\d\d$/;
+    const ready = ok.test(EVENT.start) && ok.test(EVENT.end);
+    document.getElementById("calWrap").hidden = !ready;
+    if (!ready) return;
+    document.getElementById("calGoogle").href =
+      `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${enc(EVENT.title)}&dates=${compact(EVENT.start)}/${compact(EVENT.end)}&location=${enc(EVENT.location)}&details=${enc(EVENT.details)}`;
+    document.getElementById("calOutlook").href =
+      `https://outlook.live.com/calendar/0/action/compose?subject=${enc(EVENT.title)}&startdt=${EVENT.start}:00&enddt=${EVENT.end}:00&location=${enc(EVENT.location)}&body=${enc(EVENT.details)}`;
+  }
+  applyEvent(CONFIG.event || {});
+
+  const calBtn = document.getElementById("calBtn"), calMenu = document.getElementById("calMenu");
+  calBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    calMenu.hidden = !calMenu.hidden;
+    calBtn.setAttribute("aria-expanded", String(!calMenu.hidden));
+  });
+  document.addEventListener("click", e => {
+    if (!calMenu.hidden && !calMenu.contains(e.target)) { calMenu.hidden = true; calBtn.setAttribute("aria-expanded", "false"); }
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && !calMenu.hidden) { calMenu.hidden = true; calBtn.setAttribute("aria-expanded", "false"); calBtn.focus(); }
+  });
+
+  if (LIVE) {
+    render();
+    fetchSheet().catch(() => {
+      loaded = true;
+      render();
+      document.getElementById("courses").innerHTML =
+        `<p class="empty">The table couldn’t load right now. Refresh to try again.</p>`;
+    });
+  } else {
+    entries = loadPreview().map(normalize);
+    render();
+  }
+</script>
+</body>
+</html>
