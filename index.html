@@ -278,22 +278,6 @@
   .dish-line .who { font-style: italic; color: var(--ink-soft); }
   .dish-line .party { font-style: normal; font-family: var(--label); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; color: var(--pine-soft); }
   .from { font-family: var(--display); color: var(--berry); font-size: 17px; line-height: 1.6; }
-  details { margin-top: 4px; }
-  summary {
-    cursor: pointer; width: max-content; list-style: none;
-    font-family: var(--label); text-transform: uppercase; letter-spacing: .16em; font-weight: 600; font-size: 12px; color: var(--berry);
-  }
-  summary::-webkit-details-marker { display: none; }
-  summary::before { content: "+ "; }
-  details[open] summary::before { content: "\2212 "; }
-  .recipe {
-    margin-top: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
-    padding: 18px 20px; font-size: 17px;
-  }
-  .recipe h4 { margin: 0 0 4px; font-family: var(--label); text-transform: uppercase; letter-spacing: .18em; font-size: 12px; color: var(--pine); }
-  .recipe p { margin: 0 0 14px; white-space: pre-line; }
-  .recipe p:last-child { margin-bottom: 0; }
-  .recipe .story { font-style: italic; color: var(--ink-soft); }
   .pending { margin: 4px 0 0; font-style: italic; font-size: 15px; color: var(--pine); }
   .empty { text-align: center; font-style: italic; color: var(--ink-soft); padding: 6px 0; }
 
@@ -506,7 +490,7 @@
   <p class="intro">
     Five years of pajama parties, and this year we’re filling the table with the dishes that raised us.
     Bring a family recipe to share: the one your mom made every holiday, your grandpa’s secret sauce, the cookies you’d know with your eyes closed.
-    Then upload the recipe below so <strong data-collector>Kristine</strong> can gather every one, and we can all recreate them at home.
+    Then upload the recipe below so <strong data-collector>Kristine</strong> can gather every one into a party cookbook, and we can all recreate them at home.
   </p>
 
   <form class="card" id="recipeForm" autocomplete="off">
@@ -560,7 +544,7 @@
         <span class="drop-title" id="dropTitle">Tap to add a photo, screenshot or PDF</span>
         <span class="drop-sub" id="dropSub">A snapshot of the handwritten card works great. Up to 10 MB.</span>
       </label>
-      <p class="hint">We’ll read it and type it up neatly for the recipe collection.</p>
+      <p class="hint">We’ll type it up neatly for the party cookbook.</p>
     </div>
     <div class="field">
       <label for="note">A note about it <span class="incl">(optional)</span></label>
@@ -576,7 +560,7 @@
       <button type="submit" class="btn-primary" id="submitBtn">Add to the table</button>
     </div>
     <p class="form-msg" id="formMsg" role="status"></p>
-    <p class="fine">Your upload goes straight to <span data-collector>Kristine</span>’s recipe collection. Still writing it down? Add your dish now and email the recipe whenever it’s ready:</p>
+    <p class="fine">Your upload goes straight to <span data-collector>Kristine</span>’s party cookbook. Still writing it down? Add your dish now and email the recipe whenever it’s ready:</p>
     <p class="email-line"><span class="email" id="email" data-field="email">kristinejoy@gmail.com</span> <button type="button" class="btn-ghost btn-small" id="copyEmail">Copy</button></p>
   </form>
 </section>
@@ -627,7 +611,6 @@
       name: clean(e.name, 60), dish: clean(e.dish, 80), from: clean(e.from, 80),
       course: COURSES.includes(e.course) ? e.course : "Mains",
       party: Number(e.party) || 1,
-      ingredients: clean(e.ingredients, 3000), steps: clean(e.steps, 5000), story: clean(e.story, 1500),
       hasFile: e.hasFile === true || e.hasFile === "TRUE" || e.hasFile === "true",
     };
   }
@@ -672,16 +655,8 @@
     b.addEventListener("click", () => { partyEl.value = clampParty(Number(partyEl.value) + Number(b.dataset.step)); }));
   partyEl.addEventListener("change", () => { partyEl.value = clampParty(partyEl.value); });
 
-  function recipeCard(e) {
-    if (!e.ingredients && !e.steps && !e.story) {
-      return e.hasFile ? `<p class="pending">Recipe received. It’ll appear here once it’s typed up.</p>` : "";
-    }
-    return `<details><summary>Read the recipe</summary><div class="recipe">
-      ${e.story ? `<p class="story">${esc(e.story)}</p>` : ""}
-      ${e.ingredients ? `<h4>Ingredients</h4><p>${esc(e.ingredients)}</p>` : ""}
-      ${e.steps ? `<h4>How to make it</h4><p>${esc(e.steps)}</p>` : ""}
-    </div></details>`;
-  }
+  // Recipes themselves live on Kristine's Sheet for the cookbook; the site only shows who's bringing what.
+  const recipeCard = e => e.hasFile ? `<p class="pending">Recipe’s in for the party cookbook</p>` : "";
 
   function render() {
     const wrap = document.getElementById("courses");
@@ -824,7 +799,7 @@
     render();
     const pjLine = sizes ? " Keep an eye on your inbox: we’re hunting down pajamas in your sizes." : "";
     say((file
-      ? `Thank you, ${entry.name}! ${entry.dish} is on the table, and your recipe is on its way to ${collector}.`
+      ? `Thank you, ${entry.name}! ${entry.dish} is on the table, and your recipe is on its way to ${collector}’s cookbook.`
       : `Thank you, ${entry.name}! ${entry.dish} is on the table. Come back to upload the recipe, or email it to ${collector}.`) + pjLine);
     ["dish", "note", "sizes"].forEach(id => document.getElementById(id).value = "");
     fileEl.value = ""; showFile();
