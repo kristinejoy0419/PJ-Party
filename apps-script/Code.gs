@@ -275,6 +275,7 @@ function emailKristine_(r, x) {
 const PAJAMA_LOOKS = [
   "Kids: Tree Stripes flannel pajama set (the original, mostly sold out) https://oldnavy.gap.com/browse/product.do?pid=904628002",
   "Kids: Always Believin' snug-fit set, Santa top with tree-stripe pants https://oldnavy.gap.com/browse/product.do?pid=904646042",
+  "Women's: Tree Stripes flannel pajama set, top and pants, regular/tall/petite https://oldnavy.gap.com/browse/product.do?pid=908784092",
   "Women's: Always Believin' tee https://oldnavy.gap.com/browse/product.do?pid=910769032",
   "Women's: Tree Stripes flannel pajama pants https://oldnavy.gap.com/browse/product.do?pid=908779022",
   "Women's: Tree Stripes boxer shorts https://oldnavy.gap.com/browse/product.do?pid=908778052",

@@ -137,7 +137,13 @@
   .card-base .caps a { color: inherit; text-underline-offset: 3px; }
   .cues { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
   .cues .shop.cue { margin: 0; align-self: auto; font-size: 13px; padding: 11px 20px 9px 16px; }
-  .looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  .look-groups { display: grid; gap: 40px; }
+  .group-title {
+    display: flex; align-items: center; gap: 16px; margin: 0 0 16px;
+    font-family: var(--label); text-transform: uppercase; font-weight: 700; letter-spacing: .26em; font-size: 17px; color: var(--pine);
+  }
+  .group-title::before, .group-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 230px)); justify-content: center; gap: 20px; }
   .look {
     background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
     display: flex; flex-direction: column; min-width: 0;
@@ -417,70 +423,94 @@
     Send <strong data-collector>Kristine</strong> your sizes and she’ll keep an eye out for the original to come back.
   </p>
 
-  <div class="looks">
-    <article class="look">
-      <img src="assets/kids-tree-stripes.jpg" alt="Two kids in matching red and green tree-stripe button-up pajamas" loading="lazy">
-      <div class="look-body">
-        <p class="who-for">Kids · The original</p>
-        <h3>Tree Stripes flannel set</h3>
-        <p class="note"><span class="pill">Mostly sold out</span> Text Kristine your kids’ sizes and she’ll watch for restocks.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=904628002&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
-    <article class="look">
-      <img src="assets/kids-snug-believin.jpg" alt="Two kids in cream Always Believin’ Santa tops with tree-stripe pants" loading="lazy">
-      <div class="look-body">
-        <p class="who-for">Kids · Snug fit</p>
-        <h3>Always Believin’ set</h3>
-        <p class="note">Santa top with the tree-stripe pants. The easy pick for kids this year.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=904646042&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
-    <article class="look">
-      <img src="assets/womens-believin-tee.jpg" alt="Cream t-shirt with a peace-sign Santa and the words Always Believin’" loading="lazy">
-      <div class="look-body">
-        <p class="who-for">Women’s · Top</p>
-        <h3>Always Believin’ tee</h3>
-        <p class="note">Pair it with the flannel pants or the boxer shorts.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=910769032&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
-    <article class="look">
-      <div class="swatch" role="img" aria-label="Red and green tree-stripe flannel print"></div>
-      <div class="look-body">
-        <p class="who-for">Women’s · Bottoms</p>
-        <h3>Tree Stripes flannel pants</h3>
-        <p class="note">The cozy, full-length option.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908779022&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
-    <article class="look">
-      <img src="assets/womens-boxer-shorts.jpg" alt="Tree-stripe pajama boxer shorts with a red drawstring" loading="lazy">
-      <div class="look-body">
-        <p class="who-for">Women’s · Bottoms</p>
-        <h3>Tree Stripes boxer shorts</h3>
-        <p class="note">For anyone who runs warm.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908778052&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
-    <article class="look">
-      <img src="assets/mens-tree-stripes.jpg" alt="Man in a matching tree-stripe button-up pajama set and a red beanie" loading="lazy">
-      <div class="look-body">
-        <p class="who-for">Men’s · Matching set</p>
-        <h3>Tree Stripes pajama set</h3>
-        <p class="note">Button-up top and pants, all in the stripe.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=905023042&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
-    <article class="look">
-      <img src="assets/mens-santa-tee.jpg" alt="White crew-neck t-shirt with a vintage red Santa print" loading="lazy">
-      <div class="look-body">
-        <p class="who-for">Men’s · Top</p>
-        <h3>Santa crew-neck tee</h3>
-        <p class="note">Wear it with the tree-stripe pants.</p>
-        <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=905005002&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
-      </div>
-    </article>
+  <div class="look-groups">
+  <div class="look-group">
+    <h3 class="group-title">Kids</h3>
+    <div class="looks">
+      <article class="look">
+        <img src="assets/kids-tree-stripes.jpg" alt="Two kids in matching red and green tree-stripe button-up pajamas" loading="lazy">
+        <div class="look-body">
+          <p class="who-for">The original</p>
+          <h3>Tree Stripes flannel set</h3>
+          <p class="note"><span class="pill">Mostly sold out</span> Text Kristine your kids’ sizes and she’ll watch for restocks.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=904628002&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+      <article class="look">
+        <img src="assets/kids-snug-believin.jpg" alt="Two kids in cream Always Believin’ Santa tops with tree-stripe pants" loading="lazy">
+        <div class="look-body">
+          <p class="who-for">Snug fit</p>
+          <h3>Always Believin’ set</h3>
+          <p class="note">Santa top with the tree-stripe pants. The easy pick for kids this year.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=904646042&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="look-group">
+    <h3 class="group-title">Women’s</h3>
+    <div class="looks">
+      <article class="look">
+        <div class="swatch" role="img" aria-label="Red and green tree-stripe flannel print"></div>
+        <div class="look-body">
+          <p class="who-for">Matching set</p>
+          <h3>Tree Stripes flannel pajama set</h3>
+          <p class="note">Top and pants in the stripe, in regular, tall and petite.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908784092&amp;vid=3&amp;tid=onns000009" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+      <article class="look">
+        <img src="assets/womens-believin-tee.jpg" alt="Cream t-shirt with a peace-sign Santa and the words Always Believin’" loading="lazy">
+        <div class="look-body">
+          <p class="who-for">Top</p>
+          <h3>Always Believin’ tee</h3>
+          <p class="note">Pair it with the flannel pants or the boxer shorts.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=910769032&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+      <article class="look">
+        <div class="swatch" role="img" aria-label="Red and green tree-stripe flannel print"></div>
+        <div class="look-body">
+          <p class="who-for">Bottoms</p>
+          <h3>Tree Stripes flannel pants</h3>
+          <p class="note">The cozy, full-length option.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908779022&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+      <article class="look">
+        <img src="assets/womens-boxer-shorts.jpg" alt="Tree-stripe pajama boxer shorts with a red drawstring" loading="lazy">
+        <div class="look-body">
+          <p class="who-for">Bottoms</p>
+          <h3>Tree Stripes boxer shorts</h3>
+          <p class="note">For anyone who runs warm.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=908778052&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+    </div>
+  </div>
+  <div class="look-group">
+    <h3 class="group-title">Men’s</h3>
+    <div class="looks">
+      <article class="look">
+        <img src="assets/mens-tree-stripes.jpg" alt="Man in a matching tree-stripe button-up pajama set and a red beanie" loading="lazy">
+        <div class="look-body">
+          <p class="who-for">Matching set</p>
+          <h3>Tree Stripes pajama set</h3>
+          <p class="note">Button-up top and pants, all in the stripe.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=905023042&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+      <article class="look">
+        <img src="assets/mens-santa-tee.jpg" alt="White crew-neck t-shirt with a vintage red Santa print" loading="lazy">
+        <div class="look-body">
+          <p class="who-for">Top</p>
+          <h3>Santa crew-neck tee</h3>
+          <p class="note">Wear it with the tree-stripe pants.</p>
+          <a class="shop" href="https://oldnavy.gap.com/browse/product.do?pid=905005002&amp;tid=onma000014" target="_blank" rel="noopener">Shop at Old Navy</a>
+        </div>
+      </article>
+    </div>
+  </div>
   </div>
 </section>
 </div>
