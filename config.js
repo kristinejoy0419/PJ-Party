@@ -1,7 +1,7 @@
 // Party details and the Google Sheet that collects recipes.
 // Paste the Apps Script web app URL into sheetUrl to go live (see README.md).
 window.PJ_PARTY_CONFIG = {
-  sheetUrl: "",
+  sheetUrl: "https://script.google.com/macros/s/AKfycbzKm4YWUR2GZMXzoASpFrGm5FTUVZcnA9adSu--VMAqr2u2oyZyQ277-ws7oZP5MOPZNw/exec",
   event: {
     kicker: "The 5th Annual",
     title: "Pajama Party",
