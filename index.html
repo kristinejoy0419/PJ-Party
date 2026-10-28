@@ -103,12 +103,6 @@
   }
   .cal-menu a:hover, .cal-menu a:focus-visible { background: var(--paper-deep); outline: none; }
 
-  .scroll-cue {
-    display: block; width: max-content; text-align: center; margin: 30px auto 0;
-    font-family: var(--label); text-transform: uppercase; font-weight: 600;
-    letter-spacing: .24em; font-size: 14px; color: var(--ink-soft); text-decoration: none;
-  }
-  .scroll-cue::after { content: "\2193"; display: block; font-size: 18px; margin-top: 2px; }
 
   /* ---------- Shared section bits ---------- */
   .band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -126,8 +120,8 @@
   /* ---------- What to wear ---------- */
   section.block.wide { max-width: 1040px; }
   .card-base .caps a { color: inherit; text-underline-offset: 3px; }
-  .cues { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; margin-top: 30px; }
-  .cues .scroll-cue { margin: 0; }
+  .cues { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 30px; }
+  .cues .shop.cue { margin: 0; align-self: auto; font-size: 13px; padding: 11px 20px 9px 16px; }
   .looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
   .look {
     background: var(--paper); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
@@ -147,12 +141,20 @@
   .look .note { margin: 0; font-size: 16px; color: var(--ink-soft); flex: 1; }
   .pill { display: inline-block; font-family: var(--label); text-transform: uppercase; letter-spacing: .1em; font-size: 11px; font-weight: 700; color: var(--icing); background: var(--berry); border-radius: 999px; padding: 3px 9px 1px; margin-right: 4px; }
   .shop {
-    align-self: flex-start; margin-top: 8px; text-decoration: none;
+    align-self: flex-start; margin-top: 10px; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
     font-family: var(--label); text-transform: uppercase; letter-spacing: .14em; font-weight: 700; font-size: 12px;
-    color: var(--berry); border: 1px solid var(--berry); border-radius: 999px; padding: 8px 16px 6px;
+    color: var(--icing); background: var(--roof); border-radius: 999px; padding: 9px 18px 7px 14px;
+    outline: 1.5px dashed rgba(255, 253, 248, .85); outline-offset: -5px;
+    box-shadow: 0 2px 0 #6e4530;
+    transition: background .15s, transform .15s;
   }
-  .shop:hover { background: var(--berry); color: var(--icing); }
-  .shop::after { content: " \2197"; }
+  .shop:hover { background: #7a4d33; transform: translateY(-1px); }
+  .shop:focus-visible { outline: 2px solid var(--pine); outline-offset: 3px; }
+  .shop::before {
+    content: ""; width: 13px; height: 13px; flex: none; margin-top: -2px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fffdf8' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M12 2v20M3.3 7l17.4 10M3.3 17L20.7 7M12 2l-2.5 2.5M12 2l2.5 2.5M12 22l-2.5-2.5M12 22l2.5-2.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
 
   /* ---------- Recipe card form ---------- */
   .card {
@@ -399,9 +401,9 @@
     </div>
   </div>
   <nav class="cues" aria-label="On this page">
-    <a class="scroll-cue" href="#wear">what to wear</a>
-    <a class="scroll-cue" href="#bring">share your recipe</a>
-    <a class="scroll-cue" href="#table">who’s bringing what</a>
+    <a class="shop cue" href="#wear">What to wear</a>
+    <a class="shop cue" href="#bring">Share your recipe</a>
+    <a class="shop cue" href="#table">Who’s bringing what</a>
   </nav>
 </header>
 
@@ -487,7 +489,6 @@
 <div class="band">
 <section class="block" id="bring">
   <h2 class="eyebrow">Bring a Taste of Home</h2>
-  <div class="flourish" aria-hidden="true"><svg class="gingerman" viewBox="0 0 40 48"><use href="#gingerman"/></svg></div>
   <p class="intro">
     Five years of pajama parties, and this year we’re filling the table with the dishes that raised us.
     Bring a family recipe to share: the one your mom made every holiday, your grandpa’s secret sauce, the cookies you’d know with your eyes closed.
