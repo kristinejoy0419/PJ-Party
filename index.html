@@ -59,12 +59,17 @@
   .house { position: relative; }
   .house svg { display: block; width: 100%; height: auto; }
   .house .overlay {
-    position: absolute; left: 0; right: 0; top: 44%;
+    position: absolute; left: 0; right: 0; top: 51%;
     text-align: center; color: var(--icing); pointer-events: none;
+  }
+  .house .kicker {
+    font-family: var(--label); font-weight: 700; letter-spacing: .32em; text-transform: uppercase;
+    font-size: 3.4cqw; margin: 0 0 .6cqw; padding-left: .32em;
+    text-shadow: 0 1px 0 rgba(139, 90, 60, .5);
   }
   .house h1 {
     font-family: var(--display); font-weight: 400; margin: 0;
-    font-size: 11.5cqw; line-height: 1.15;
+    font-size: 11cqw; line-height: 1.1;
     text-shadow: 0 2px 0 rgba(139, 90, 60, .45);
   }
   .card-base {
@@ -76,10 +81,6 @@
   .card-base .caps {
     font-family: var(--label); font-weight: 600; text-transform: uppercase; letter-spacing: .22em;
     color: var(--berry); font-size: clamp(12px, 3cqw, 17px); margin: 0;
-  }
-  .kicker-base {
-    font-family: var(--label); font-weight: 700; letter-spacing: .34em; text-transform: uppercase;
-    color: var(--pine); font-size: clamp(13px, 3.2cqw, 18px); margin: 0 0 3cqw;
   }
   .card-base .when {
     font-family: var(--display); color: var(--berry); font-weight: 400;
@@ -116,7 +117,8 @@
     font-family: var(--display); font-weight: 400; color: var(--berry);
     font-size: clamp(32px, 6vw, 42px); line-height: 1.2; text-align: center; margin: 0; text-wrap: balance;
   }
-  .flourish { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0 8px; color: var(--pine); font-size: 18px; }
+  .flourish { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0 8px; }
+  .flourish .gingerman { width: 30px; height: 36px; display: block; }
   .flourish::before, .flourish::after { content: ""; height: 1px; width: 80px; background: var(--line); }
   .intro { max-width: 34em; margin: 0 auto 30px; text-align: center; color: var(--ink-soft); text-wrap: pretty; }
   .intro strong { color: var(--ink); font-weight: 500; }
@@ -226,6 +228,18 @@
   .email-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; margin: 8px 0 0; }
   .email { font-size: 19px; font-weight: 500; user-select: all; overflow-wrap: anywhere; }
   .btn-small { padding: 7px 16px 5px; font-size: 12px; }
+  .drop {
+    position: relative; display: grid; gap: 4px; justify-items: center; text-align: center; cursor: pointer;
+    margin: 8px 0 0; padding: 26px 18px; border: 2px dashed var(--line); border-radius: 14px; background: var(--icing);
+    text-transform: none; letter-spacing: 0; font-family: var(--body); font-weight: 400; transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--berry); background: var(--paper-deep); }
+  .drop:focus-within { outline: 2px solid var(--pine); outline-offset: 3px; }
+  .drop.has-file { border-style: solid; border-color: var(--pine); }
+  .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .drop-title { font-family: var(--label); text-transform: uppercase; letter-spacing: .14em; font-weight: 700; font-size: 13px; color: var(--berry); overflow-wrap: anywhere; }
+  .drop.has-file .drop-title { color: var(--pine); }
+  .drop-sub { font-style: italic; font-size: 16px; color: var(--ink-soft); }
   .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
   /* ---------- The family table ---------- */
@@ -263,6 +277,7 @@
   .recipe p { margin: 0 0 14px; white-space: pre-line; }
   .recipe p:last-child { margin-bottom: 0; }
   .recipe .story { font-style: italic; color: var(--ink-soft); }
+  .pending { margin: 4px 0 0; font-style: italic; font-size: 15px; color: var(--pine); }
   .empty { text-align: center; font-style: italic; color: var(--ink-soft); padding: 6px 0; }
 
   footer {
@@ -287,10 +302,21 @@
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="gingerman" viewBox="0 0 40 48">
+    <path fill="#b9783f" d="M20 1a7.5 7.5 0 0 1 5.6 12.5c3.4.5 7 1.7 10.2 3.2a3.6 3.6 0 0 1-2.8 6.6c-2-.8-4.2-1.5-6.3-2l3.3 8.6 4.6 10.2a3.8 3.8 0 0 1-6.9 3.1L20 34.7l-7.7 8.5a3.8 3.8 0 0 1-6.9-3.1l4.6-10.2 3.3-8.6c-2.1.5-4.3 1.2-6.3 2a3.6 3.6 0 0 1-2.8-6.6c3.2-1.5 6.8-2.7 10.2-3.2A7.5 7.5 0 0 1 20 1Z"/>
+    <g fill="none" stroke="#fffdf8" stroke-width="1.3" stroke-linecap="round">
+      <path d="M17 11.2q3 2.2 6 0"/><path d="M4.8 19.6l3 1.4M35.2 19.6l-3 1.4M9 39.5l2.6 1.4M31 39.5l-2.6 1.4"/>
+    </g>
+    <g fill="#fffdf8"><circle cx="17.3" cy="7.6" r="1"/><circle cx="22.7" cy="7.6" r="1"/></g>
+    <g fill="#c63b3b"><circle cx="20" cy="19.5" r="1.4"/><circle cx="20" cy="24.5" r="1.4"/><circle cx="20" cy="29.5" r="1.4"/></g>
+  </symbol>
+</svg>
+
 <header class="hero">
   <div class="invite">
     <div class="house">
-      <svg viewBox="0 0 600 580" role="img" aria-label="A gingerbread house with a red door, a wreath and two pine trees">
+      <svg viewBox="0 0 600 610" role="img" aria-label="A gingerbread house with a red door, a wreath and two pine trees">
         <defs>
           <pattern id="icing" width="50" height="50" patternUnits="userSpaceOnUse">
             <path d="M-2 14 Q12 40 25 14 M23 14 Q37 40 52 14" fill="none" stroke="#fffdf8" stroke-width="4.5" stroke-linecap="round"/>
@@ -312,9 +338,9 @@
         <rect x="30" y="96" width="540" height="190" fill="#8b5a3c"/>
         <rect x="30" y="96" width="540" height="190" fill="url(#icing)"/>
         <!-- house body -->
-        <rect x="58" y="258" width="484" height="322" fill="#c8955f"/>
-        <rect x="58" y="258" width="14" height="322" fill="url(#cane)"/>
-        <rect x="528" y="258" width="14" height="322" fill="url(#cane)"/>
+        <rect x="58" y="258" width="484" height="352" fill="#c8955f"/>
+        <rect x="58" y="258" width="14" height="352" fill="url(#cane)"/>
+        <rect x="528" y="258" width="14" height="352" fill="url(#cane)"/>
         <!-- gable -->
         <polygon points="300,72 140,280 460,280" fill="#c8955f"/>
         <polyline points="128,286 300,62 472,286" fill="none" stroke="#fffdf8" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
@@ -323,7 +349,7 @@
           <line x1="300" y1="162" x2="300" y2="230"/><line x1="266" y1="196" x2="334" y2="196"/>
           <path d="M276 150 q-10 -14 6 -18 M324 150 q10 -14 -6 -18 M300 146 q-10 -12 0 -20 q10 8 0 20"/>
         </g>
-        <g transform="translate(0 60)">
+        <g transform="translate(0 90)">
         <!-- windows -->
         <g fill="none" stroke="#fffdf8" stroke-width="4">
           <path d="M100 470 V390 a42 42 0 0 1 84 0 V470 Z"/>
@@ -347,11 +373,11 @@
         </g>
       </svg>
       <div class="overlay">
+        <p class="kicker" data-field="kicker">The 5th Annual</p>
         <h1 data-field="title">Pajama Party</h1>
       </div>
     </div>
     <div class="card-base">
-      <p class="kicker-base" data-field="kicker">The 5th Annual</p>
       <div class="stack">
         <p class="caps">Come cozy, come hungry</p>
         <p class="caps">and bring a family recipe to share</p>
@@ -366,6 +392,7 @@
         <button type="button" class="btn-ghost" id="calBtn" aria-expanded="false" aria-controls="calMenu">Add to calendar</button>
         <div class="cal-menu" id="calMenu" hidden>
           <a id="calGoogle" target="_blank" rel="noopener">Google Calendar</a>
+          <a id="calApple" href="pj-party.ics">Apple Calendar</a>
           <a id="calOutlook" target="_blank" rel="noopener">Outlook</a>
         </div>
       </div>
@@ -382,7 +409,7 @@
 <div class="band">
 <section class="block wide" id="wear">
   <h2 class="eyebrow">The Dress Code: Tree Stripes</h2>
-  <div class="flourish" aria-hidden="true">&#10052;</div>
+  <div class="flourish" aria-hidden="true"><svg class="gingerman" viewBox="0 0 40 48"><use href="#gingerman"/></svg></div>
   <p class="intro">
     We match every year, and this year it’s Old Navy’s red-and-green <strong>Tree Stripes</strong>.
     The original button-up set is sold out in most sizes, so grab one of the options below instead.
@@ -460,11 +487,11 @@
 <div class="band">
 <section class="block" id="bring">
   <h2 class="eyebrow">Bring a Taste of Home</h2>
-  <div class="flourish" aria-hidden="true">&#10052;</div>
+  <div class="flourish" aria-hidden="true"><svg class="gingerman" viewBox="0 0 40 48"><use href="#gingerman"/></svg></div>
   <p class="intro">
     Five years of pajama parties, and this year we’re filling the table with the dishes that raised us.
     Bring a family recipe to share: the one your mom made every holiday, your grandpa’s secret sauce, the cookies you’d know with your eyes closed.
-    Then pass the recipe along to <strong data-collector>Kristine</strong>, who is gathering every one so we can all recreate them at home.
+    Then upload the recipe below so <strong data-collector>Kristine</strong> can gather every one, and we can all recreate them at home.
   </p>
 
   <form class="card" id="recipeForm" autocomplete="off">
@@ -484,30 +511,27 @@
       </div>
     </div>
 
-    <p class="card-title second">Your recipe card</p>
+    <p class="card-title second">Your recipe</p>
     <div class="field">
       <label for="dish">The dish</label>
-      <input type="text" id="dish" placeholder="e.g. Pancit for a crowd" required maxlength="80">
-    </div>
-    <div class="field">
-      <label for="from">Whose recipe is it?</label>
-      <input type="text" id="from" placeholder="e.g. Lola Nena’s, Dad’s, our family’s since 1962" maxlength="80">
+      <input type="text" id="dish" placeholder="e.g. Lola’s pancit" required maxlength="80">
     </div>
     <div class="field">
       <span class="label" id="courseLabel">What kind of dish</span>
       <div class="courses" role="radiogroup" aria-labelledby="courseLabel" id="courseOptions"></div>
     </div>
     <div class="field">
-      <label for="ingredients">Ingredients</label>
-      <textarea id="ingredients" rows="4" placeholder="One per line, amounts are great but a pinch of this counts too" maxlength="3000"></textarea>
+      <span class="label" id="uploadLabel">Upload the recipe</span>
+      <label class="drop" id="drop" for="recipeFile">
+        <input type="file" id="recipeFile" accept="image/*,application/pdf,.pdf,.txt,text/plain" aria-labelledby="uploadLabel">
+        <span class="drop-title" id="dropTitle">Tap to add a photo, screenshot or PDF</span>
+        <span class="drop-sub" id="dropSub">A snapshot of the handwritten card works great. Up to 10 MB.</span>
+      </label>
+      <p class="hint">We’ll read it and type it up neatly for the recipe collection.</p>
     </div>
     <div class="field">
-      <label for="steps">How to make it</label>
-      <textarea id="steps" rows="4" placeholder="Write it the way it was taught to you" maxlength="5000"></textarea>
-    </div>
-    <div class="field">
-      <label for="story">The story behind it <span class="incl">(optional)</span></label>
-      <textarea id="story" rows="2" placeholder="Who made it, when it showed up, why it matters" maxlength="1500"></textarea>
+      <label for="note">A note about it <span class="incl">(optional)</span></label>
+      <input type="text" id="note" placeholder="Whose recipe it is, or the story behind it" maxlength="300">
     </div>
 
     <div class="hp" aria-hidden="true">
@@ -519,7 +543,7 @@
       <button type="submit" class="btn-primary" id="submitBtn">Add to the table</button>
     </div>
     <p class="form-msg" id="formMsg" role="status"></p>
-    <p class="fine">Your recipe card goes straight to <span data-collector>Kristine</span>. Still writing it down? Add your dish now and email the recipe whenever it’s ready:</p>
+    <p class="fine">Your upload goes straight to <span data-collector>Kristine</span>’s recipe collection. Still writing it down? Add your dish now and email the recipe whenever it’s ready:</p>
     <p class="email-line"><span class="email" id="email" data-field="email">kristinejoy@gmail.com</span> <button type="button" class="btn-ghost btn-small" id="copyEmail">Copy</button></p>
   </form>
 </section>
@@ -528,7 +552,7 @@
 <div class="table-wrap band">
   <section class="block" id="table">
     <h2 class="eyebrow">The Family Table</h2>
-    <div class="flourish" aria-hidden="true">&#10052;</div>
+    <div class="flourish" aria-hidden="true"><svg class="gingerman" viewBox="0 0 40 48"><use href="#gingerman"/></svg></div>
     <p class="tally" id="tally"></p>
     <div id="courses"></div>
   </section>
@@ -571,6 +595,7 @@
       course: COURSES.includes(e.course) ? e.course : "Mains",
       party: Number(e.party) || 1,
       ingredients: clean(e.ingredients, 3000), steps: clean(e.steps, 5000), story: clean(e.story, 1500),
+      hasFile: e.hasFile === true || e.hasFile === "TRUE" || e.hasFile === "true",
     };
   }
 
@@ -590,6 +615,7 @@
       // text/plain keeps this a "simple" request, which Apps Script accepts cross-origin
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ ...entry, website: honeypot }),
+      // the uploaded file rides along as base64 inside entry.file
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Not saved");
@@ -614,7 +640,9 @@
   partyEl.addEventListener("change", () => { partyEl.value = clampParty(partyEl.value); });
 
   function recipeCard(e) {
-    if (!e.ingredients && !e.steps && !e.story) return "";
+    if (!e.ingredients && !e.steps && !e.story) {
+      return e.hasFile ? `<p class="pending">Recipe received. It’ll appear here once it’s typed up.</p>` : "";
+    }
     return `<details><summary>Read the recipe</summary><div class="recipe">
       ${e.story ? `<p class="story">${esc(e.story)}</p>` : ""}
       ${e.ingredients ? `<h4>Ingredients</h4><p>${esc(e.ingredients)}</p>` : ""}
@@ -659,24 +687,80 @@
   const submitBtn = document.getElementById("submitBtn");
   function say(text, isError) { formMsg.textContent = text; formMsg.classList.toggle("error", Boolean(isError)); }
 
+  // ---------- Recipe upload ----------
+  const fileEl = document.getElementById("recipeFile");
+  const dropEl = document.getElementById("drop");
+  const MAX_BYTES = 10 * 1024 * 1024;
+  function showFile() {
+    const f = fileEl.files[0];
+    dropEl.classList.toggle("has-file", Boolean(f));
+    document.getElementById("dropTitle").textContent = f ? f.name : "Tap to add a photo, screenshot or PDF";
+    document.getElementById("dropSub").textContent = f
+      ? (f.size > MAX_BYTES ? "That file is over 10 MB. Try a smaller photo or a PDF." : "Got it. Tap to choose a different file.")
+      : "A snapshot of the handwritten card works great. Up to 10 MB.";
+  }
+  fileEl.addEventListener("change", showFile);
+  ["dragenter", "dragover"].forEach(t => dropEl.addEventListener(t, () => dropEl.classList.add("over")));
+  ["dragleave", "drop"].forEach(t => dropEl.addEventListener(t, () => dropEl.classList.remove("over")));
+
+  const readAsDataUrl = blob => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+
+  // Photos straight off a phone are huge; shrink them so the upload is quick.
+  async function shrinkImage(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = url; });
+      const scale = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      const blob = await new Promise(resolve => c.toBlob(resolve, "image/jpeg", 0.85));
+      return blob || file;
+    } catch (e) {
+      return file; // e.g. HEIC the browser can't draw: send it as is
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function packFile(file) {
+    const isImage = /^image\//.test(file.type) && !/heic|heif/i.test(file.type);
+    const blob = isImage ? await shrinkImage(file) : file;
+    if (blob.size > MAX_BYTES) throw new Error("too_big");
+    const dataUrl = await readAsDataUrl(blob);
+    const name = isImage ? file.name.replace(/\.[^.]+$/, "") + ".jpg" : file.name;
+    return { name, type: blob.type || file.type || "application/octet-stream", data: dataUrl.split(",")[1] };
+  }
+
   document.getElementById("recipeForm").addEventListener("submit", async e => {
     e.preventDefault();
     const val = id => document.getElementById(id).value;
     const course = (document.querySelector("input[name=course]:checked") || {}).value;
+    const file = fileEl.files[0];
     const entry = normalize({
-      id: "u" + Date.now(), name: val("name"), dish: val("dish"), from: val("from"), course,
-      party: clampParty(partyEl.value), ingredients: val("ingredients"), steps: val("steps"), story: val("story"),
+      id: "u" + Date.now(), name: val("name"), dish: val("dish"), course,
+      party: clampParty(partyEl.value), hasFile: Boolean(file),
     });
     if (!entry.name || !entry.dish || !course) return;
+    const note = clean(val("note"), 300);
 
     if (LIVE) {
       submitBtn.disabled = true;
-      say("Adding your recipe…");
+      say(file ? "Uploading your recipe…" : "Adding your dish…");
       try {
-        await postEntry(entry, val("website"));
+        const payload = { ...entry, note };
+        if (file) payload.file = await packFile(file);
+        await postEntry(payload, val("website"));
       } catch (err) {
         submitBtn.disabled = false;
-        say("That didn’t save. Check your connection and try again.", true);
+        say(err.message === "too_big"
+          ? "That file is over 10 MB. Try a smaller photo or a PDF."
+          : "That didn’t save. Check your connection and try again.", true);
         return;
       }
       submitBtn.disabled = false;
@@ -686,11 +770,11 @@
     lastAddedId = entry.id;
     if (!LIVE) savePreview();
     render();
-    const hasRecipe = entry.ingredients || entry.steps;
-    say(hasRecipe
+    say(file
       ? `Thank you, ${entry.name}! ${entry.dish} is on the table, and your recipe is on its way to ${collector}.`
-      : `Thank you, ${entry.name}! ${entry.dish} is on the table. When the recipe is ready, email it to ${collector}.`);
-    ["dish", "from", "ingredients", "steps", "story"].forEach(id => document.getElementById(id).value = "");
+      : `Thank you, ${entry.name}! ${entry.dish} is on the table. Come back to upload the recipe, or email it to ${collector}.`);
+    ["dish", "note"].forEach(id => document.getElementById(id).value = "");
+    fileEl.value = ""; showFile();
     partyEl.value = 1;
     document.querySelectorAll("input[name=course]").forEach(r => r.checked = false);
     document.getElementById("table").scrollIntoView({ behavior: "smooth" });
@@ -705,7 +789,7 @@
 
   // ---------- Event details (from config.js, or the Sheet's Event tab) ----------
   let collector = "Kristine";
-  const EVENT = { title: "5th Annual Pajama Party", start: "", end: "", location: "", details: "Wear your coziest pajamas and bring a family recipe to share." };
+  const EVENT = { title: "🎄 5th Annual Pajama Party", start: "", end: "", location: "", details: "Wear your coziest pajamas and bring a family recipe to share." };
   const enc = encodeURIComponent;
   const compact = iso => iso.replace(/[-:]/g, "") + "00";
 

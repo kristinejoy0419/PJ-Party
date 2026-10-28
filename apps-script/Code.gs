@@ -1,26 +1,61 @@
 /**
  * Recipe collector for the 5th Annual Pajama Party.
  *
- * Paste this into Extensions > Apps Script on a Google Sheet, then
- * Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone).
- * Copy the web app URL into config.js as sheetUrl.
+ * Setup (details in README.md):
+ *  1. Paste this into Extensions > Apps Script on a Google Sheet.
+ *  2. Project Settings > Script properties: add ANTHROPIC_API_KEY.
+ *  3. Run setup() once and approve the permissions.
+ *  4. Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone)
+ *     and copy the web app URL into config.js as sheetUrl.
  *
- * The Sheet gets a "Recipes" tab (one row per guest) and every new recipe is
- * also emailed to COLLECTOR_EMAIL.
+ * What happens to each submission:
+ *  - doPost saves the uploaded file to a "PJ Party Recipes" Drive folder and adds
+ *    a row to the "Recipes" tab with Status "New".
+ *  - The recipe helper (organizeRecipes, every 5 minutes) sends each new upload
+ *    to Claude, which reads the photo or PDF and fills in whose recipe it is,
+ *    servings, ingredients, steps and the story, then emails Kristine a tidy copy.
  */
 const COLLECTOR_EMAIL = "kristinejoy@gmail.com";
+const MODEL = "claude-opus-5-5";
+const FOLDER_NAME = "PJ Party Recipes";
 const COURSES = ["Bites", "Mains", "Sides", "Sweets", "Sips"];
-const HEADERS = ["Timestamp", "Name", "Party", "Dish", "Whose recipe", "Course", "Ingredients", "How to make it", "Story"];
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+const COLS = ["Timestamp", "Name", "Party", "Dish", "Course", "Note", "File", "Status",
+  "Whose recipe", "Serves", "Ingredients", "How to make it", "Story", "Helper notes"];
+const C = Object.fromEntries(COLS.map((h, i) => [h, i + 1])); // header -> 1-based column
 
 function recipesSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName("Recipes");
   if (!sheet) {
     sheet = ss.insertSheet("Recipes");
-    sheet.appendRow(HEADERS);
+    sheet.appendRow(COLS);
     sheet.setFrozenRows(1);
+    sheet.getRange(1, 1, 1, COLS.length).setFontWeight("bold");
   }
   return sheet;
+}
+
+function folder_() {
+  const found = DriveApp.getFoldersByName(FOLDER_NAME);
+  return found.hasNext() ? found.next() : DriveApp.createFolder(FOLDER_NAME);
+}
+
+/** Run once from the editor: creates the tab and folder and starts the recipe helper. */
+function setup() {
+  recipesSheet_();
+  folder_();
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === "organizeRecipes")
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger("organizeRecipes").timeBased().everyMinutes(5).create();
+}
+
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu("PJ Party")
+    .addItem("Organize new recipes now", "organizeRecipes")
+    .addToUi();
 }
 
 function json_(obj) {
@@ -29,11 +64,15 @@ function json_(obj) {
 
 const clip_ = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
 
+// ---------- Web app ----------
+
 function doGet() {
   const rows = recipesSheet_().getDataRange().getValues().slice(1);
   const entries = rows.map(r => ({
-    name: r[1], party: r[2], dish: r[3], from: r[4], course: r[5],
-    ingredients: r[6], steps: r[7], story: r[8],
+    name: r[C.Name - 1], party: r[C.Party - 1], dish: r[C.Dish - 1], course: r[C.Course - 1],
+    from: r[C["Whose recipe"] - 1], ingredients: r[C.Ingredients - 1],
+    steps: r[C["How to make it"] - 1], story: r[C.Story - 1],
+    hasFile: Boolean(r[C.File - 1]),
   }));
   return json_({ ok: true, entries });
 }
@@ -45,36 +84,174 @@ function doPost(e) {
 
   const entry = {
     name: clip_(body.name, 60), party: Math.min(12, Math.max(1, Number(body.party) || 1)),
-    dish: clip_(body.dish, 80), from: clip_(body.from, 80),
+    dish: clip_(body.dish, 80), note: clip_(body.note, 300),
     course: COURSES.indexOf(body.course) >= 0 ? body.course : "Mains",
-    ingredients: clip_(body.ingredients, 3000), steps: clip_(body.steps, 5000), story: clip_(body.story, 1500),
   };
   if (!entry.name || !entry.dish) return json_({ ok: false, error: "Name and dish are required" });
+
+  let fileUrl = "";
+  if (body.file && body.file.data) {
+    const bytes = Utilities.base64Decode(body.file.data);
+    if (bytes.length > MAX_FILE_BYTES) return json_({ ok: false, error: "File is over 10 MB" });
+    const blob = Utilities.newBlob(bytes, clip_(body.file.type, 100) || "application/octet-stream",
+      entry.name + " - " + entry.dish + " - " + clip_(body.file.name, 80));
+    fileUrl = folder_().createFile(blob).getUrl();
+  }
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    recipesSheet_().appendRow([new Date(), entry.name, entry.party, entry.dish, entry.from, entry.course,
-      entry.ingredients, entry.steps, entry.story]);
+    const row = COLS.map(() => "");
+    row[C.Timestamp - 1] = new Date();
+    row[C.Name - 1] = entry.name;
+    row[C.Party - 1] = entry.party;
+    row[C.Dish - 1] = entry.dish;
+    row[C.Course - 1] = entry.course;
+    row[C.Note - 1] = entry.note;
+    row[C.File - 1] = fileUrl;
+    row[C.Status - 1] = fileUrl ? "New" : "No recipe yet";
+    recipesSheet_().appendRow(row);
   } finally {
     lock.releaseLock();
   }
+  return json_({ ok: true });
+}
 
+// ---------- Recipe helper ----------
+
+const RECIPE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["is_recipe", "whose_recipe", "serves", "ingredients", "steps", "story", "helper_notes"],
+  properties: {
+    is_recipe: { type: "boolean", description: "False if the file is not a recipe or cannot be read." },
+    whose_recipe: { type: "string", description: "Possessive form of whose recipe it is, e.g. \"Lola Nena's\" or \"the Garcia family's\". Empty if unknown." },
+    serves: { type: "string", description: "Servings or yield as written, e.g. \"8 to 10\". Empty if not stated." },
+    ingredients: { type: "array", items: { type: "string" }, description: "One ingredient per item with its amount, in the order written." },
+    steps: { type: "array", items: { type: "string" }, description: "One step per item, in order, without numbering." },
+    story: { type: "string", description: "Any personal note or history written on the card or in the guest's note. Empty if none." },
+    helper_notes: { type: "string", description: "Short note for Kristine about anything unreadable, missing or guessed. Empty if all clear." },
+  },
+};
+
+function organizeRecipes() {
+  const key = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  if (!key) return;
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return; // a previous run is still going
+  try {
+    const sheet = recipesSheet_();
+    const values = sheet.getDataRange().getValues();
+    for (let i = 1; i < values.length; i++) {
+      const r = values[i];
+      if (r[C.Status - 1] !== "New") continue;
+      const rowNum = i + 1;
+      try {
+        const result = readRecipe_(key, r);
+        writeResult_(sheet, rowNum, result);
+        emailKristine_(r, result);
+      } catch (err) {
+        sheet.getRange(rowNum, C.Status).setValue("Needs a look");
+        sheet.getRange(rowNum, C["Helper notes"]).setValue(String(err.message || err).slice(0, 500));
+      }
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function readRecipe_(key, r) {
+  const fileId = String(r[C.File - 1]).match(/[-\w]{25,}/);
+  if (!fileId) throw new Error("Could not find the uploaded file");
+  const blob = DriveApp.getFileById(fileId[0]).getBlob();
+  const type = blob.getContentType();
+  const data = Utilities.base64Encode(blob.getBytes());
+
+  let fileBlock;
+  if (type === "application/pdf") {
+    fileBlock = { type: "document", source: { type: "base64", media_type: "application/pdf", data } };
+  } else if (/^image\/(jpeg|png|gif|webp)$/.test(type)) {
+    fileBlock = { type: "image", source: { type: "base64", media_type: type, data } };
+  } else if (/^text\//.test(type)) {
+    fileBlock = { type: "text", text: blob.getDataAsString().slice(0, 50000) };
+  } else {
+    throw new Error("This file type (" + type + ") can't be read automatically. Open the file and type it in.");
+  }
+
+  const prompt = [
+    "A guest uploaded this family recipe for a holiday pajama party potluck. The host is collecting every",
+    "recipe so guests can recreate them at home. Transcribe it faithfully: keep the family's wording,",
+    "amounts and quirks (\"a pinch\", \"until it smells right\"), fix only obvious spelling slips, and split",
+    "it into ingredients and steps. Do not invent amounts or steps that aren't there; mention gaps in",
+    "helper_notes instead.",
+    "",
+    "Guest: " + r[C.Name - 1],
+    "Dish they named: " + r[C.Dish - 1],
+    "Their note: " + (r[C.Note - 1] || "(none)"),
+  ].join("\n");
+
+  const res = UrlFetchApp.fetch("https://api.anthropic.com/v1/messages", {
+    method: "post",
+    contentType: "application/json",
+    muteHttpExceptions: true,
+    headers: {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "anthropic-beta": "server-side-fallback-2026-07-01",
+    },
+    payload: JSON.stringify({
+      model: MODEL,
+      max_tokens: 16000,
+      fallbacks: "default",
+      output_config: { effort: "low", format: { type: "json_schema", schema: RECIPE_SCHEMA } },
+      messages: [{ role: "user", content: [fileBlock, { type: "text", text: prompt }] }],
+    }),
+  });
+
+  const code = res.getResponseCode();
+  const msg = JSON.parse(res.getContentText());
+  if (code !== 200) throw new Error("Claude API error " + code + ": " + ((msg.error && msg.error.message) || "unknown"));
+  if (msg.stop_reason === "refusal") throw new Error("The recipe helper declined this file. Open it and type it in.");
+  if (msg.stop_reason === "max_tokens") throw new Error("The recipe was too long to finish. Open it and check.");
+  const text = (msg.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+  return JSON.parse(text);
+}
+
+function writeResult_(sheet, rowNum, x) {
+  const set = (col, v) => sheet.getRange(rowNum, C[col]).setValue(v);
+  if (!x.is_recipe) {
+    set("Status", "Needs a look");
+    set("Helper notes", x.helper_notes || "This doesn't look like a recipe.");
+    return;
+  }
+  set("Whose recipe", x.whose_recipe);
+  set("Serves", x.serves);
+  set("Ingredients", x.ingredients.join("\n"));
+  set("How to make it", x.steps.map((s, i) => (i + 1) + ". " + s).join("\n"));
+  set("Story", x.story);
+  set("Helper notes", x.helper_notes);
+  set("Status", x.helper_notes ? "Organized, check notes" : "Organized");
+}
+
+function emailKristine_(r, x) {
+  if (!x.is_recipe) return;
+  const lines = [
+    r[C.Name - 1] + " is bringing " + r[C.Dish - 1] + " (" + r[C.Course - 1] + ", party of " + r[C.Party - 1] + ").",
+    x.whose_recipe ? "Recipe: " + x.whose_recipe : "",
+    x.serves ? "Serves: " + x.serves : "",
+    x.story ? "\nThe story:\n" + x.story : "",
+    "\nIngredients:\n" + x.ingredients.map(s => "- " + s).join("\n"),
+    "\nHow to make it:\n" + x.steps.map((s, i) => (i + 1) + ". " + s).join("\n"),
+    x.helper_notes ? "\nNote from the recipe helper: " + x.helper_notes : "",
+    "\nOriginal upload: " + r[C.File - 1],
+  ];
   try {
     MailApp.sendEmail({
       to: COLLECTOR_EMAIL,
-      subject: "PJ Party recipe: " + entry.dish + " from " + entry.name,
-      body: [
-        entry.name + " is bringing " + entry.dish + " (" + entry.course + ", party of " + entry.party + ").",
-        entry.from ? "Whose recipe: " + entry.from : "",
-        entry.story ? "\nThe story:\n" + entry.story : "",
-        entry.ingredients ? "\nIngredients:\n" + entry.ingredients : "",
-        entry.steps ? "\nHow to make it:\n" + entry.steps : "",
-        (!entry.ingredients && !entry.steps) ? "\nNo recipe yet. They said they'll send it later." : "",
-      ].filter(Boolean).join("\n"),
+      subject: "PJ Party recipe: " + r[C.Dish - 1] + " from " + r[C.Name - 1],
+      body: lines.filter(Boolean).join("\n"),
     });
   } catch (err) {
-    // The row is saved even if the email quota is used up.
+    // The row is organized even if the daily email quota is used up.
   }
-  return json_({ ok: true });
 }

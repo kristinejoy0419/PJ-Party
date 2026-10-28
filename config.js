@@ -10,7 +10,7 @@ window.PJ_PARTY_CONFIG = {
     place: "4198 Rosenbaum Ave",
     collector: "Kristine",
     email: "kristinejoy@gmail.com",
-    calendarTitle: "5th Annual Pajama Party",
+    calendarTitle: "🎄 5th Annual Pajama Party",
     start: "2026-12-20T13:30",
     end: "2026-12-20T17:30",
     location: "4198 Rosenbaum Ave",
