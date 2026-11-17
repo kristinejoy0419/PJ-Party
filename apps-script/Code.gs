@@ -10,6 +10,8 @@
  *     and copy the web app URL into config.js as sheetUrl.
  *
  * What happens to each submission:
+ *  - Guests can fix their own line on the site (dish, course, headcount): the page
+ *    posts action "edit" with the row's id, which is its Timestamp in milliseconds.
  *  - doPost saves the uploaded file to a "PJ Party Recipes" Drive folder and adds
  *    a row to the "Recipes" tab with Status "New".
  *  - The recipe helper (organizeRecipes, every 5 minutes) sends each new upload
@@ -79,6 +81,7 @@ const clip_ = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
 function doGet() {
   const rows = recipesSheet_().getDataRange().getValues().slice(1);
   const entries = rows.map(r => ({
+    id: r[C.Timestamp - 1] instanceof Date ? String(r[C.Timestamp - 1].getTime()) : "",
     name: r[C.Name - 1], party: r[C.Party - 1], dish: r[C.Dish - 1], course: r[C.Course - 1],
     from: r[C["Whose recipe"] - 1], hasFile: Boolean(r[C.File - 1]),
     // The typed-up recipes stay on the Sheet for Kristine's cookbook, not on the site.
@@ -90,6 +93,7 @@ function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: "Bad request" }); }
   if (body.website) return json_({ ok: true }); // honeypot: quietly ignore bots
+  if (body.action === "edit") return editEntry_(body);
 
   const entry = {
     name: clip_(body.name, 60), party: Math.min(12, Math.max(1, Number(body.party) || 1)),
@@ -110,11 +114,12 @@ function doPost(e) {
     fileUrl = folder_().createFile(blob).getUrl();
   }
 
+  const now = new Date();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const row = COLS.map(() => "");
-    row[C.Timestamp - 1] = new Date();
+    row[C.Timestamp - 1] = now;
     row[C.Name - 1] = entry.name;
     row[C.Party - 1] = entry.party;
     row[C.Dish - 1] = entry.dish;
@@ -128,6 +133,33 @@ function doPost(e) {
     row[C["Pajama help"] - 1] = entry.pajamas !== "Still looking" ? ""
       : entry.email && entry.sizes ? "Searching" : "No email, ask Kristine";
     recipesSheet_().appendRow(row);
+  } finally {
+    lock.releaseLock();
+  }
+  return json_({ ok: true, id: String(now.getTime()) });
+}
+
+/** A guest changes what they're bringing or how many are coming. The row is found by its Timestamp. */
+function editEntry_(body) {
+  const id = clip_(body.id, 20);
+  const dish = clip_(body.dish, 80);
+  const party = Math.min(12, Math.max(1, Number(body.party) || 1));
+  const course = COURSES.indexOf(body.course) >= 0 ? body.course : "Mains";
+  if (!id || !dish) return json_({ ok: false, error: "Dish is required" });
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = recipesSheet_();
+    const last = sheet.getLastRow();
+    if (last < 2) return json_({ ok: false, error: "Not found" });
+    const stamps = sheet.getRange(2, C.Timestamp, last - 1, 1).getValues();
+    const i = stamps.findIndex(([t]) => t instanceof Date && String(t.getTime()) === id);
+    if (i < 0) return json_({ ok: false, error: "Not found" });
+    const rowNum = i + 2;
+    sheet.getRange(rowNum, C.Party).setValue(party);
+    sheet.getRange(rowNum, C.Dish).setValue(dish);
+    sheet.getRange(rowNum, C.Course).setValue(course);
   } finally {
     lock.releaseLock();
   }
