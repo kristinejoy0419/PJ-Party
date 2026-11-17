@@ -299,6 +299,16 @@
   .from { font-family: var(--display); color: var(--berry); font-size: 17px; line-height: 1.6; }
   .pending { margin: 4px 0 0; font-style: italic; font-size: 15px; color: var(--pine); }
   .empty { text-align: center; font-style: italic; color: var(--ink-soft); padding: 6px 0; }
+  .edit-btn {
+    border: 0; background: none; padding: 4px 8px 2px; margin-left: 2px; border-radius: 999px;
+    font-size: 11px; letter-spacing: .14em; color: var(--berry); text-decoration: underline; text-underline-offset: 3px;
+  }
+  .edit-btn:hover { background: var(--paper-deep); }
+  .edit-form { margin: 6px 0 4px; padding: 16px 16px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--icing); }
+  .edit-form .field { margin-bottom: 14px; }
+  .edit-form .actions { margin-top: 14px; justify-content: flex-start; }
+  .edit-form .actions button { padding: 9px 20px 7px; font-size: 12px; }
+  .edit-form .form-msg { text-align: left; margin-top: 8px; min-height: 0; font-size: 16px; }
 
   footer {
     text-align: center; padding-block: 24px 64px;
@@ -667,6 +677,8 @@
       course: COURSES.includes(e.course) ? e.course : "Mains",
       party: Number(e.party) || 1,
       hasFile: e.hasFile === true || e.hasFile === "TRUE" || e.hasFile === "true",
+      // Live rows can only be edited once the Sheet hands out row ids (Code.gs with editEntry_).
+      editable: !LIVE || Boolean(e.id),
     };
   }
 
@@ -690,6 +702,7 @@
     });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Not saved");
+    return data;
   }
 
   // Course pills
@@ -713,6 +726,40 @@
   // Recipes themselves live on Kristine's Sheet for the cookbook; the site only shows who's bringing what.
   const recipeCard = e => e.hasFile ? `<p class="pending">Recipe’s in for the party cookbook</p>` : "";
 
+  // ---------- Editing a line on the table ----------
+  let editingId = null;
+  const editForm = e => {
+    const key = "e" + String(e.id).replace(/\W/g, "");
+    return `
+      <form class="edit-form" data-id="${esc(e.id)}" autocomplete="off">
+        <div class="row field">
+          <div>
+            <label for="${key}-dish">What ${esc(e.name)} is bringing</label>
+            <input type="text" id="${key}-dish" name="dish" value="${esc(e.dish)}" required maxlength="80">
+          </div>
+          <div>
+            <label for="${key}-party">Total in party</label>
+            <div class="stepper">
+              <button type="button" data-step="-1" aria-label="One fewer">&minus;</button>
+              <input type="number" id="${key}-party" name="party" min="1" max="12" value="${e.party || 1}" inputmode="numeric">
+              <button type="button" data-step="1" aria-label="One more">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label" id="${key}-cl">What kind of dish</span>
+          <div class="courses" role="radiogroup" aria-labelledby="${key}-cl">${COURSES.map(c => `
+            <input type="radio" name="course" id="${key}-${c}" value="${c}" ${c === e.course ? "checked" : ""}><label for="${key}-${c}">${c}</label>`).join("")}
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-primary">Save changes</button>
+          <button type="button" class="btn-ghost" data-cancel>Cancel</button>
+        </div>
+        <p class="form-msg" role="status"></p>
+      </form>`;
+  };
+
   function render() {
     const wrap = document.getElementById("courses");
     if (!loaded) {
@@ -727,8 +774,10 @@
             <li class="${e.id === lastAddedId ? "new" : ""}">
               <div class="dish-line">
                 <span class="dish">${esc(e.dish)}</span>
-                <span class="who">${esc(e.name)}${(e.party || 1) > 1 ? ` <span class="party">party of ${e.party}</span>` : ""}</span>
+                <span class="who">${esc(e.name)}${(e.party || 1) > 1 ? ` <span class="party">party of ${e.party}</span>` : ""}${e.editable && e.id !== editingId
+                  ? ` <button type="button" class="edit-btn" data-edit="${esc(e.id)}" aria-label="Edit ${esc(e.name)}’s dish or headcount">Edit</button>` : ""}</span>
               </div>
+              ${e.id === editingId ? editForm(e) : ""}
               ${e.from ? `<div class="from">from ${esc(e.from.replace(/^from\s+/i, ""))} kitchen</div>` : ""}
               ${recipeCard(e)}
             </li>`).join("")}</ul>`
@@ -745,6 +794,69 @@
       ? `See you in your slippers with ${guests} of our favorite people!`
       : "See you in your slippers";
   }
+
+  const coursesEl = document.getElementById("courses");
+  coursesEl.addEventListener("click", ev => {
+    const edit = ev.target.closest("[data-edit]");
+    if (edit) {
+      editingId = edit.dataset.edit;
+      render();
+      const input = coursesEl.querySelector(".edit-form input[name=dish]");
+      if (input) input.focus();
+      return;
+    }
+    if (ev.target.closest("[data-cancel]")) {
+      const id = editingId;
+      editingId = null;
+      render();
+      const back = coursesEl.querySelector(`[data-edit="${CSS.escape(id)}"]`);
+      if (back) back.focus();
+      return;
+    }
+    const step = ev.target.closest(".edit-form .stepper button");
+    if (step) {
+      const input = step.parentElement.querySelector("input");
+      input.value = clampParty(Number(input.value) + Number(step.dataset.step));
+    }
+  });
+  coursesEl.addEventListener("submit", async ev => {
+    const form = ev.target.closest(".edit-form");
+    if (!form) return;
+    ev.preventDefault();
+    const entry = entries.find(x => x.id === form.dataset.id);
+    if (!entry) return;
+    const dish = clean(form.elements.dish.value, 80);
+    const party = clampParty(form.elements.party.value);
+    const course = (form.querySelector("input[name=course]:checked") || {}).value || entry.course;
+    const msg = form.querySelector(".form-msg");
+    if (!dish) { msg.textContent = "Tell us what you’re bringing."; msg.classList.add("error"); return; }
+
+    if (LIVE) {
+      const btns = form.querySelectorAll("button");
+      btns.forEach(b => b.disabled = true);
+      msg.textContent = "Saving…"; msg.classList.remove("error");
+      try {
+        const res = await fetch(SHEET_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "edit", id: entry.id, dish, party, course }),
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "Not saved");
+      } catch (err) {
+        btns.forEach(b => b.disabled = false);
+        msg.textContent = "That didn’t save. Check your connection and try again.";
+        msg.classList.add("error");
+        return;
+      }
+    }
+
+    Object.assign(entry, { dish, party, course });
+    editingId = null;
+    lastAddedId = entry.id;
+    if (!LIVE) savePreview();
+    render();
+  });
 
   const formMsg = document.getElementById("formMsg");
   const submitBtn = document.getElementById("submitBtn");
@@ -843,7 +955,9 @@
       try {
         const payload = { ...entry, note, pajamas, email, sizes };
         if (file) payload.file = await packFile(file);
-        await postEntry(payload, val("website"));
+        const saved = await postEntry(payload, val("website"));
+        entry.id = saved.id || entry.id;
+        entry.editable = Boolean(saved.id);
       } catch (err) {
         submitBtn.disabled = false;
         say(err.message === "too_big"
