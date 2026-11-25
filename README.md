@@ -6,7 +6,8 @@ Table" list of who's bringing what.
 
 ## Files
 
-- `index.html` is the whole page.
+- `index.html` is the party page.
+- `caught.html` is Caught in PJs: guests add themselves with a photo, add matchups and vote on who catches whom. Starting photos are in `assets/caught/`.
 - `config.js` holds the party details (date, time, address, who collects recipes) and the Google Sheet URL.
 - `assets/` has the pajama photos.
 - `pj-party.ics` is the Apple Calendar invite. Update it if the date or time changes.
@@ -34,3 +35,11 @@ To fix or remove an entry, edit its row in the Sheet.
 The form asks each guest whether they've bought their Tree Stripes pajamas. Guests who are still looking list who needs pajamas and in what sizes, plus their email. Those rows get **Pajama help: Searching** on the Recipes tab. On the same 5-minute run, Gemini searches the web (Google Search grounding) for those sizes, starting with Old Navy. The guest then gets an email with what's in stock and the links, and Kristine gets a blind copy. Replies go to Kristine. The row then reads **Emailed** with the date, or **Needs a look** with the reason. The **PJ Party > Find pajamas for guests now** menu runs it right away.
 
 After pasting a new version of `Code.gs`, open **Deploy > Manage deployments**, edit the web app, set **Version: New version** and click **Deploy**. The URL stays the same.
+
+## Caught in PJs
+
+`caught.html` uses the same web app. Anyone with the link can vote (one vote per phone per matchup), add themselves with a photo, and add a suggested matchup; nobody needs to sign in. The first time the page loads after `Code.gs` is redeployed, the script creates three tabs on the Sheet and fills in the starting players and matchups:
+
+- **Caught Players**: one row per person. Photos guests upload go to a **PJ Party Caught in PJs** Drive folder, shared view-only by link so the page can show them. Delete a row to take someone off the board.
+- **Caught Matchups**: one row per pair. To record who won, type the catcher's name in **Caught by**; the leaderboard counts it within about 20 seconds. Delete a row to remove a matchup.
+- **Caught Votes**: one row per phone per matchup.
