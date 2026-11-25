@@ -1,30 +1,31 @@
 /**
- * Recipe collector for the 5th Annual Pajama Party.
+ * PJ Party backend: the one Apps Script behind the whole party site.
+ * Every form on https://kristinejoy0419.github.io/PJ-Party/ talks to this same
+ * web app, so this file covers all of them. Replace the whole file when
+ * updating, or the other parts of the site stop working.
+ *
+ * What's in here, in order:
+ *  1. RSVP and Family Table (index.html): guests RSVP with their dish, course and
+ *     headcount, optionally upload a recipe, and can edit their own line later.
+ *     Rows go on the "Recipes" tab; uploads go to a "PJ Party Recipes" Drive folder.
+ *  2. Caught in PJs (caught.html): guests add themselves with a photo, pair people
+ *     up, and vote on who catches whom. Players, matchups and votes live on the
+ *     "Caught Players", "Caught Matchups" and "Caught Votes" tabs. To record a
+ *     result, type the catcher's name in the matchup's "Caught by" column.
+ *  3. Recipe helper (every 5 minutes): Gemini reads each new recipe upload, fills
+ *     in the recipe columns for the cookbook, and emails Kristine a tidy copy.
+ *  4. Pajama helper (same 5-minute run): for guests still looking for pajamas,
+ *     Gemini searches Old Navy for their sizes and emails them what's in stock
+ *     (Kristine gets a blind copy).
  *
  * Setup (details in README.md):
- *  1. Paste this into Extensions > Apps Script on a Google Sheet.
+ *  1. Paste this into Extensions > Apps Script on the PJ party Google Sheet.
  *  2. Project Settings > Script properties: add GEMINI_API_KEY (any Gemini key
  *     from Google AI Studio). Optionally add GEMINI_MODEL to pick a different model.
  *  3. Run setup() once and approve the permissions.
  *  4. Deploy > New deployment > Web app (Execute as: Me, Who has access: Anyone)
  *     and copy the web app URL into config.js as sheetUrl.
- *
- * What happens to each submission:
- *  - Guests can fix their own line on the site (dish, course, headcount): the page
- *    posts action "edit" with the row's id, which is its Timestamp in milliseconds.
- *  - doPost saves the uploaded file to a "PJ Party Recipes" Drive folder and adds
- *    a row to the "Recipes" tab with Status "New".
- *  - The recipe helper (organizeRecipes, every 5 minutes) sends each new upload
- *    to Gemini, which reads the photo or PDF and fills in whose recipe it is,
- *    servings, ingredients, steps and the story, then emails Kristine a tidy copy.
- *  - The pajama helper (findPajamas, on the same 5-minute run) takes each guest
- *    who is still looking for a size, has Gemini search Old Navy for the Tree
- *    Stripes pajamas in those sizes, and emails the guest what it found
- *    (Kristine gets a blind copy).
- *  - Caught in PJs (caught.html): guests add themselves with a photo, pair people
- *    up, and vote on who catches whom. Players, matchups and votes live on the
- *    "Caught Players", "Caught Matchups" and "Caught Votes" tabs. To record a
- *    result, type the catcher's name in the matchup's "Caught by" column.
+ *  After any change: Deploy > Manage deployments > pencil > Version: New version > Deploy.
  */
 const COLLECTOR_EMAIL = "kristinejoy@gmail.com";
 const DEFAULT_MODEL = "gemini-2.5-flash";
