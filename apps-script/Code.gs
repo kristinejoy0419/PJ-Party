@@ -8,13 +8,9 @@
  *  1. RSVP and Family Table (index.html): guests RSVP with their dish, course and
  *     headcount, optionally upload a recipe, and can edit their own line later.
  *     Rows go on the "Recipes" tab; uploads go to a "PJ Party Recipes" Drive folder.
- *  2. Caught in PJs (caught.html): guests add themselves with a photo, pair people
- *     up, and vote on who catches whom. Players, matchups and votes live on the
- *     "Caught Players", "Caught Matchups" and "Caught Votes" tabs. To record a
- *     result, type the catcher's name in the matchup's "Caught by" column.
- *  3. Recipe helper (every 5 minutes): Gemini reads each new recipe upload, fills
+ *  2. Recipe helper (every 5 minutes): Gemini reads each new recipe upload, fills
  *     in the recipe columns for the cookbook, and emails Kristine a tidy copy.
- *  4. Pajama helper (same 5-minute run): for guests still looking for pajamas,
+ *  3. Pajama helper (same 5-minute run): for guests still looking for pajamas,
  *     Gemini searches Old Navy for their sizes and emails them what's in stock
  *     (Kristine gets a blind copy).
  *
@@ -83,8 +79,7 @@ const clip_ = (v, max) => String(v == null ? "" : v).trim().slice(0, max);
 
 // ---------- Web app ----------
 
-function doGet(e) {
-  if (e && e.parameter && e.parameter.caught) return json_(caughtState_(clip_(e.parameter.voter, 60)));
+function doGet() {
   const rows = recipesSheet_().getDataRange().getValues().slice(1);
   const entries = rows.map(r => ({
     id: r[C.Timestamp - 1] instanceof Date ? String(r[C.Timestamp - 1].getTime()) : "",
@@ -100,9 +95,6 @@ function doPost(e) {
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: "Bad request" }); }
   if (body.website) return json_({ ok: true }); // honeypot: quietly ignore bots
   if (body.action === "edit") return editEntry_(body);
-  if (body.action === "caught-vote") return json_(caughtVote_(body));
-  if (body.action === "caught-join") return json_(caughtJoin_(body));
-  if (body.action === "caught-matchup") return json_(caughtMatchup_(body));
 
   const entry = {
     name: clip_(body.name, 60), party: Math.min(12, Math.max(1, Number(body.party) || 1)),
@@ -173,135 +165,6 @@ function editEntry_(body) {
     lock.releaseLock();
   }
   return json_({ ok: true });
-}
-
-// ---------- Caught in PJs ----------
-
-const CAUGHT_PHOTO_FOLDER = "PJ Party Caught in PJs";
-const CAUGHT_PHOTO_BASE = "https://kristinejoy0419.github.io/PJ-Party/assets/caught/";
-const CAUGHT_MAX_PLAYERS = 150;
-const CAUGHT_TABS = {
-  players: ["Id", "Name", "Photo", "Added"],
-  matchups: ["Id", "A", "B", "Added", "Caught by"],
-  votes: ["Voter", "Matchup", "Pick", "Updated"],
-};
-// The players and matchups from the first version of the game (the Claude page).
-const CAUGHT_SEED_PLAYERS = [["daniel", "Daniel"], ["kristine", "Kristine"], ["theresa", "Theresa"], ["jg", "JG"],
-  ["jas", "Jas"], ["mike", "Mike"], ["panha", "Panha"], ["kat", "Kat"], ["dan", "Dan"], ["liz", "Liz"], ["adam", "Adam"]];
-const CAUGHT_SEED_MATCHUPS = [["m1", "daniel", "kristine"], ["m2", "theresa", "jg"], ["m3", "jas", "mike"],
-  ["m4", "panha", "kat"], ["m5", "dan", "liz"]];
-
-function caughtSheet_(which) {
-  const name = { players: "Caught Players", matchups: "Caught Matchups", votes: "Caught Votes" }[which];
-  const cols = CAUGHT_TABS[which];
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(name);
-  if (sheet) return sheet;
-  sheet = ss.insertSheet(name);
-  sheet.appendRow(cols);
-  sheet.setFrozenRows(1);
-  sheet.getRange(1, 1, 1, cols.length).setFontWeight("bold");
-  const now = new Date();
-  if (which === "players") {
-    sheet.getRange(2, 1, CAUGHT_SEED_PLAYERS.length, 4)
-      .setValues(CAUGHT_SEED_PLAYERS.map(([id, n]) => [id, n, CAUGHT_PHOTO_BASE + id + ".jpg", now]));
-  } else if (which === "matchups") {
-    sheet.getRange(2, 1, CAUGHT_SEED_MATCHUPS.length, 5)
-      .setValues(CAUGHT_SEED_MATCHUPS.map(([id, a, b]) => [id, a, b, now, ""]));
-  }
-  return sheet;
-}
-
-function caughtRows_(which) {
-  const sheet = caughtSheet_(which);
-  return sheet.getLastRow() < 2 ? [] : sheet.getRange(2, 1, sheet.getLastRow() - 1, CAUGHT_TABS[which].length).getValues();
-}
-
-function caughtState_(voter) {
-  const players = caughtRows_("players").filter(r => r[0] && r[1])
-    .map(r => ({ id: String(r[0]), name: String(r[1]).slice(0, 30), photo: /^https:\/\//.test(r[2]) ? String(r[2]) : "" }));
-  const byName = {};
-  players.forEach(p => { byName[p.name.toLowerCase()] = p.id; byName[p.id.toLowerCase()] = p.id; });
-  const tally = {}, mine = {};
-  caughtRows_("votes").forEach(([v, m, pick]) => {
-    if (pick !== "a" && pick !== "b") return;
-    tally[m] = tally[m] || { a: 0, b: 0 };
-    tally[m][pick]++;
-    if (voter && String(v) === voter) mine[m] = pick;
-  });
-  const matchups = caughtRows_("matchups").filter(r => r[0] && r[1] && r[2]).map(r => {
-    const id = String(r[0]), a = String(r[1]), b = String(r[2]);
-    const said = byName[String(r[4] || "").trim().toLowerCase()] || "";
-    return { id, a, b, votes: tally[id] || { a: 0, b: 0 }, catcher: said === a || said === b ? said : "" };
-  });
-  return { ok: true, players, matchups, mine };
-}
-
-function caughtVote_(body) {
-  const voter = clip_(body.voter, 60), matchup = clip_(body.matchup, 40);
-  const pick = body.pick === "a" || body.pick === "b" ? body.pick : "";
-  if (!/^[\w-]{8,60}$/.test(voter) || !matchup) return { ok: false, error: "Bad vote" };
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    if (!caughtRows_("matchups").some(r => String(r[0]) === matchup)) return { ok: false, error: "That matchup is gone" };
-    const sheet = caughtSheet_("votes");
-    const rows = caughtRows_("votes");
-    const i = rows.findIndex(r => String(r[0]) === voter && String(r[1]) === matchup);
-    if (i >= 0) sheet.getRange(i + 2, 3, 1, 2).setValues([[pick, new Date()]]);
-    else if (pick) sheet.appendRow([voter, matchup, pick, new Date()]);
-  } finally {
-    lock.releaseLock();
-  }
-  return caughtState_(voter);
-}
-
-function caughtJoin_(body) {
-  const name = clip_(body.name, 30);
-  if (!name) return { ok: false, error: "Enter a name first" };
-  let photo = "";
-  if (body.photo && body.photo.data) {
-    const bytes = Utilities.base64Decode(body.photo.data);
-    if (bytes.length > 3 * 1024 * 1024) return { ok: false, error: "That photo is too big" };
-    if (!/^image\/(jpeg|png|webp)$/.test(String(body.photo.type))) return { ok: false, error: "Use a JPG or PNG photo" };
-    const found = DriveApp.getFoldersByName(CAUGHT_PHOTO_FOLDER);
-    const folder = found.hasNext() ? found.next() : DriveApp.createFolder(CAUGHT_PHOTO_FOLDER);
-    const file = folder.createFile(Utilities.newBlob(bytes, body.photo.type, name + ".jpg"));
-    try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (err) { /* shows initials instead */ }
-    photo = "https://drive.google.com/thumbnail?id=" + file.getId() + "&sz=w400";
-  }
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    const rows = caughtRows_("players");
-    if (rows.length >= CAUGHT_MAX_PLAYERS) return { ok: false, error: "The board is full" };
-    if (rows.some(r => String(r[1]).toLowerCase() === name.toLowerCase())) return { ok: false, error: name + " is already playing" };
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 12) || "p";
-    const id = slug + "-" + Utilities.getUuid().slice(0, 6);
-    caughtSheet_("players").appendRow([id, name, photo, new Date()]);
-  } finally {
-    lock.releaseLock();
-  }
-  return caughtState_(clip_(body.voter, 60));
-}
-
-function caughtMatchup_(body) {
-  const a = clip_(body.a, 40), b = clip_(body.b, 40);
-  if (!a || !b || a === b) return { ok: false, error: "Pick two different people" };
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    const ids = caughtRows_("players").map(r => String(r[0]));
-    if (ids.indexOf(a) < 0 || ids.indexOf(b) < 0) return { ok: false, error: "Someone in that pair isn't playing" };
-    const key = [a, b].sort().join("|");
-    const rows = caughtRows_("matchups");
-    if (rows.some(r => [String(r[1]), String(r[2])].sort().join("|") === key)) return { ok: false, error: "That matchup is already up" };
-    if (rows.length >= 300) return { ok: false, error: "The board is full" };
-    caughtSheet_("matchups").appendRow(["m" + Date.now(), a, b, new Date(), ""]);
-  } finally {
-    lock.releaseLock();
-  }
-  return caughtState_(clip_(body.voter, 60));
 }
 
 // ---------- Recipe helper ----------
