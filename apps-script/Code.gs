@@ -25,7 +25,7 @@
 const COLLECTOR_EMAIL = "kristinejoy@gmail.com";
 const DEFAULT_MODEL = "gemini-2.5-flash";
 const FOLDER_NAME = "PJ Party Recipes";
-const COURSES = ["Bites", "Mains", "Sides", "Sweets", "Sips"];
+const COURSES = ["Bites", "Mains", "Sides", "Sweets", "Sips", "Experience"];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 const COLS = ["Timestamp", "Name", "Party", "Dish", "Course", "Note", "File", "Status",
